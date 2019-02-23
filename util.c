@@ -55,3 +55,10 @@ char *stresc(const char *str) {
     estr[len] = '\0';
     return estr;
 }
+
+void print_escaped_source(const char *source) {
+    printf("=== Source ===\n");
+    char *esource = stresc(source);
+    printf(".> \"%s\"\n", esource);
+    free(esource);
+}

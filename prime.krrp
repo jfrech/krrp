@@ -1,0 +1,23 @@
+~ prime predicate
+!P^n:
+ !p^d:?<d2 1 ?%nd@-d10.
+ ?<n2 0 p-n1.
+
+~ list structures
+!E#E. !L#Lfr.
+
+~ range
+!R^ab:?<abLaR+a1bE.
+
+~ filter
+!F^pl:?#?ElE?p#!flL#!fl@;p#!rl@;p#!rl.
+
+~ test
+![computed]F;PR0$99.
+![expected]L2L3L5L7L$11.L$13.L$17.L$19.L$23.L$29.L$31.L$37.L$41.L$43.L$47.L$53.L$59.L$61.L$67.L$71.L$73.L$79.L$83.L$89.L$97.E
+
+[computed]
+[expected]
+= [computed] [expected]
+
+![factorial]^n:?n*n@-n11. ![choose]^nk:!f;[factorial]/fn*fkf-nk. [choose]83
