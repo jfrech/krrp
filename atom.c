@@ -11,9 +11,6 @@
 #include "options.h"
 extern Options *GlobalOptions;
 
-// TODO -- Generates invalid memory behaviour
-#define PEDANTIC_ERROR_CHECKING false
-
 
 
 /*** GlobalAtomTable ***/
@@ -556,12 +553,13 @@ Atom *atom_scope_new_empty() {
 }
 
 bool atom_scope_is(Atom *atom) {
-    return atom_is(atom) && atom->type == atom_type_scope;
+    if (!atom_is(atom) || atom->type != atom_type_scope)
+        return false;
 
-    if (PEDANTIC_ERROR_CHECKING) {
-        if (!atom_is(atom) || atom->type != atom_type_scope)
-            return false;
+    if (!GlobalOptions)
+        return error_atom("atom_scope_is: Cannot read global options.\n"), false;
 
+    if (GlobalOptions->pedantic_scope_verification) {
         ScopeAtom *scope_atom = atom->atom;
 
         if (!atomlist_is(scope_atom->names) || !atomlist_purely(scope_atom->names, atom_type_name) || !atomlist_is(scope_atom->binds))
@@ -570,9 +568,9 @@ bool atom_scope_is(Atom *atom) {
         // trying to implement (at least partial) tail recursion
         if (!atom_nullscope_is(scope_atom->upper_scope) && !atom_scope_is(scope_atom->upper_scope))
             return error_atom("atom_scope_is: Malformed ScopeAtom.\n"), false;
-
-        return true;
     }
+
+    return true;
 }
 
 void atom_scope_setflag_ismain(Atom *atom, bool flg) {

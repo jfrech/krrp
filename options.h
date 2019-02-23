@@ -11,6 +11,8 @@ struct Options {
     bool debug_address;
     bool debug_printGlobalAtomTable;
 
+    bool pedantic_scope_verification;
+
     long maximum_interpretation_recursion_depth;
 };
 
