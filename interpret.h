@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "atom.h"
 
-Atom *interpret(AtomList *parsed, Atom *scope, bool active);
+Atom *interpret(long recursion_depth, AtomList *parsed, Atom *scope, bool active);
 Atom *main_scope();
 
 #endif

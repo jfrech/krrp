@@ -2,6 +2,7 @@
 #define OPTIONS_H
 
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef struct Options Options;
 
@@ -9,6 +10,8 @@ struct Options {
     bool color;
     bool debug_address;
     bool debug_printGlobalAtomTable;
+
+    long maximum_interpretation_recursion_depth;
 };
 
 void globaloptions_init();

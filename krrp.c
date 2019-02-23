@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     printf("\n=== Interpreting ===\n");
     Atom *scope = main_scope();
     while (!atomlist_empty(parsed))
-        printf(".> %s\n", atom_repr(interpret(parsed, scope, true)));
+        printf(".> %s\n", atom_repr(interpret(0, parsed, scope, true)));
     printf("\n");
 
     atomlist_free(parsed);

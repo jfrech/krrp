@@ -12,7 +12,7 @@ void test(const char *source, Atom *expected) {
 
     AtomList *parsed = parse(source);
     Atom *scope = main_scope();
-    Atom *computed = interpret(parsed, scope, true);
+    Atom *computed = interpret(0, parsed, scope, true);
 
     if (!atom_equal(computed, expected))
         printf("[FAIL] \"%s\"\n   :: '%s' differs from expected '%s'.\n", esource, atom_repr(computed), atom_repr(expected));

@@ -17,4 +17,6 @@ void globaloptions_init() {
     GlobalOptions->color = true;
     GlobalOptions->debug_address = false;
     GlobalOptions->debug_printGlobalAtomTable = !true; // TODO
+
+    GlobalOptions->maximum_interpretation_recursion_depth = 2048;
 }

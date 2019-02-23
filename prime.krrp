@@ -21,3 +21,11 @@
 = [computed] [expected]
 
 ![factorial]^n:?n*n@-n11. ![choose]^nk:!f;[factorial]/fn*fkf-nk. [choose]83
+
+~ map
+!M^fl:?#?ElELf#!fl@;f#!rl.
+M^n:*nn.R09
+
+~ infinite loop
+![loop]^b:?b[loop]b0.
+[loop]0
