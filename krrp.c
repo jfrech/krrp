@@ -20,6 +20,7 @@
 
 #include "util.h"
 #include "test.h"
+#include "memorymanagement.h"
 
 // TODO: potentially implement AtomList as a doubly linked list.
 // TODO: potentially implement own special color markup
@@ -28,7 +29,9 @@ int main() {
     globaloptions_init();
     globalatomtable_init();
 
+
     test_all();
+
 
     // const char *source = "![factorial]^n:?n*n@-n11. ![choose]^nk:!f;[factorial]/fn*fkf-nk. [choose]83";
     const char *source = "~ List\n!E#E. !L#Lfr.\n~ Tuple\n!T#Tlr.\n![range_step]^abs:?<abLa@+asbsE. ![range]^ab:[range_step]ab1. T[range]$-13.6[range_step]$-20.$87.8";
@@ -50,6 +53,6 @@ int main() {
 
     atomlist_free(parsed);
 
-    globalatomtable_free();
-    globaloptions_free();
+
+    memorymanagement_free_all();
 }

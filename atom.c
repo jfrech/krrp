@@ -6,6 +6,7 @@
 #include "atom.h"
 #include "error.h"
 #include "util.h"
+#include "memorymanagement.h"
 
 #include "options.h"
 extern Options *GlobalOptions;
@@ -41,33 +42,6 @@ void globalatomtable_print() {
     }
 }
 
-static void atom_free(Atom *atom);
-static void atomlist_free_totally(AtomList *lst) {
-
-    {
-        AtomListNode *node = lst->head;
-        printf("Freeing %d ...\n", atomlist_len(lst));
-        while (0&&node) {
-            printf(" >> %s\n", atom_repr(node->atom));
-            node = node->next;
-        }
-    }
-
-    AtomListNode *node = lst->head;
-    while (node) {
-        atom_free(node->atom);
-        node = node->next;
-    }
-    atomlist_free(lst);
-}
-
-void globalatomtable_free() {
-    if (GlobalOptions->debug_printGlobalAtomTable)
-        globalatomtable_print();
-
-    atomlist_free_totally(GlobalAtomTable);
-    atomlist_free_totally(GlobalAtomTableMutable);
-}
 
 
 
@@ -97,75 +71,6 @@ Atom *atom_new(atom_type type, void *atom) {
     return natom;
 }
 
-static void atom_free(Atom *atom) {
-    if (!atom)
-        return;
-
-    if (!atom_is(atom)) {
-        error_atom("atom_free: Malformed atom -- cannot properly free.\n");
-        free(atom);
-        return;
-    }
-
-    if (atom->type == atom_type_null
-    || atom->type == atom_type_nullcondition
-    || atom->type == atom_type_nullscope
-    || atom->type == atom_type_Enull)
-        ;
-
-    else if (atom->type == atom_type_name) {
-        NameAtom *name_atom = atom->atom;
-        free(name_atom->name);
-        free(name_atom);
-    }
-    else if (atom->type == atom_type_integer) {
-        IntegerAtom *integer_atom = atom->atom;
-        free(integer_atom);
-    }
-    else if (atom->type == atom_type_primitive) {
-        PrimitiveAtom *primitive_atom = atom->atom;
-        free(primitive_atom);
-    }
-    else if (atom->type == atom_type_functiondeclaration) {
-        FunctionDeclarationAtom *functiondeclaration_atom = atom->atom;
-        atomlist_free(functiondeclaration_atom->parameters);
-        atomlist_free(functiondeclaration_atom->body);
-        free(functiondeclaration_atom);
-    }
-    else if (atom->type == atom_type_function) {
-        FunctionAtom *function_atom = atom->atom;
-        if (function_atom->parameters)
-            atomlist_free(function_atom->parameters);
-        if (function_atom->body)
-            atomlist_free(function_atom->body);
-        free(function_atom->primitive);
-        free(function_atom);
-    }
-    else if (atom->type == atom_type_scope) {
-        ScopeAtom *scope_atom = atom->atom;
-        atomlist_free(scope_atom->names);
-        atomlist_free(scope_atom->binds);
-        free(scope_atom);
-    }
-    else if (atom->type == atom_type_structinitializer) {
-        StructInitializerAtom *structinitializer_atom = atom->atom;
-        atomlist_free(structinitializer_atom->fields);
-        free(structinitializer_atom);
-    }
-    else if (atom->type == atom_type_struct) {
-        StructAtom *struct_atom = atom->atom;
-        free(struct_atom);
-    }
-    else if (atom->type == atom_type_string) {
-        StringAtom *string_atom = atom->atom;
-        free(string_atom->str);
-        free(string_atom);
-    }
-    else
-        error_atom("atom_free: Trying to free atom of unknown type @%p.\n", (void *) atom);
-
-    free(atom);
-}
 
 bool atom_is(Atom *atom) {
     if (!atom)
@@ -767,7 +672,7 @@ Atom *atom_scope_unbind(Atom *scope, Atom *name) {
     if (atom_nullscope_is(scope_atom->upper_scope))
         return error_atom("atom_scope_unbind: Could not find name bind (%s).\n", atom_repr(name)), NULL;
 
-    /* Perfect use of tail recursion! */ 
+    /* Perfect use of tail recursion! */
     return atom_scope_unbind(scope_atom->upper_scope, name);
 }
 
@@ -968,7 +873,6 @@ Atom *atom_string_newcopy(const char *str) {
 /* === AtomList === */
 
 static AtomListNode *atomlistnode_new(Atom *atom, AtomListNode *next);
-static void atomlistnode_free(AtomListNode *node);
 
 Atom *atomlist_representation(AtomList *lst) {
     if (!atomlist_is(lst))
@@ -1014,23 +918,7 @@ bool atomlist_is(AtomList *lst) {
     return true;
 }
 
-/* Does not free any atoms. */
-void atomlist_free(AtomList *lst) {
-    if (!lst)
-        return;
 
-    if (!atomlist_is(lst))
-        return;
-
-    AtomListNode *node = lst->head;
-    free(lst);
-
-    while (node) {
-        AtomListNode *nnode = node->next;
-        atomlistnode_free(node);
-        node = nnode;
-    }
-}
 
 static AtomListNode *atomlistnode_new(Atom *atom, AtomListNode *next) {
     if (!atom_is(atom))
@@ -1045,14 +933,6 @@ static AtomListNode *atomlistnode_new(Atom *atom, AtomListNode *next) {
     node->next = next;
 
     return node;
-}
-
-/* Does not free the atom. */
-static void atomlistnode_free(AtomListNode *node) {
-    if (!node)
-        return;
-
-    free(node);
 }
 
 void atomlist_push(AtomList *lst, Atom *atom) {

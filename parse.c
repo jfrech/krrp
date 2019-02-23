@@ -4,6 +4,7 @@
 #include "parse.h"
 #include "atom.h"
 #include "error.h"
+#include "memorymanagement.h"
 
 // internal parse function (recursively called in each function declaration)
 static int _parse(const char *source, int p, AtomList *parsed, parse_state state);

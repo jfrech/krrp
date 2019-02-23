@@ -7,6 +7,7 @@
 #include "error.h"
 #include "interpret.h"
 #include "util.h"
+#include "memorymanagement.h"
 
 #define E(...) return error_interpret(__VA_ARGS__), atom_Enull_new();
 

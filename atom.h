@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
+
 // used to declare empty structs
 #define EMPTY char _;
 
@@ -52,7 +53,6 @@ typedef struct AtomListNode AtomListNode;
 // global atom table
 void globalatomtable_init();
 void globalatomtable_print();
-void globalatomtable_free();
 
 // atom creation and modification
 struct Atom { atom_type type; void *atom; };
@@ -145,7 +145,6 @@ struct AtomListNode { Atom *atom; AtomListNode *next; };
 
 AtomList *atomlist_new(AtomListNode *head);
 bool atomlist_is(AtomList *lst);
-void atomlist_free(AtomList *lst);
 
 //TODO
 Atom *atomlist_representation(AtomList *lst);

@@ -12,6 +12,5 @@ struct Options {
 };
 
 void globaloptions_init();
-void globaloptions_free();
 
 #endif

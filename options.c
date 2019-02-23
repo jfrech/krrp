@@ -18,7 +18,3 @@ void globaloptions_init() {
     GlobalOptions->debug_address = false;
     GlobalOptions->debug_printGlobalAtomTable = !true; // TODO
 }
-
-void globaloptions_free() {
-    free(GlobalOptions);
-}

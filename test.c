@@ -2,6 +2,7 @@
 #include "util.h"
 #include "parse.h"
 #include "interpret.h"
+#include "memorymanagement.h"
 
 #include <stdlib.h>
 #include <stdio.h>

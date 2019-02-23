@@ -1,4 +1,4 @@
-clear
+clear; clear
 gcc -Wall -Wpedantic -c *.c -O0
 gcc *.o -o krrp -O0
 ./krrp
