@@ -17,7 +17,7 @@ extern Options *GlobalOptions;
 /*
 The global atom table retains a pointer to every atom in use.
 This allows for both atom caching (only applicable to immutable atoms;
-atoms like scopes or functions are mutable) and eventual leakless atom freeing.
+atoms like scopes or functions are mutable) and eventual leakless atom mm_freeing.
 */
 AtomList *GlobalAtomTable;
 AtomList *GlobalAtomTableMutable;
@@ -46,7 +46,7 @@ void globalatomtable_print() {
 
 /*** Atom ***/
 static Atom *atom_new_local(atom_type type, void *atom) {
-    Atom *natom = malloc(sizeof *natom);
+    Atom *natom = mm_malloc(sizeof *natom);
 
     if (!natom)
         return error_malloc("atom_new"), NULL;
@@ -320,14 +320,14 @@ Atom *atom_name_new(char *name) {
         if (atom_name_is(atom)) {
             NameAtom *name_atom = atom->atom;
             if (strcmp(name_atom->name, name) == 0) {
-                free(name);
+                mm_free(name);
                 return atom;
             }
         }
     end_GlobalAtomTable_cashing
 
     // atom not found, create new atom
-    NameAtom *name_atom = malloc(sizeof *name_atom);
+    NameAtom *name_atom = mm_malloc(sizeof *name_atom);
 
     if (!name_atom)
         return error_malloc("atom_name_new"), NULL;
@@ -356,14 +356,14 @@ Atom *atom_integer_new(integer value) {
         if (atom_integer_is(atom)) {
             IntegerAtom *integer_atom = atom->atom;
             if (integer_atom->value == value)
-                /* no freeing required */
+                /* no mm_freeing required */
                 return atom;
         }
     end_GlobalAtomTable_cashing
 
 
 
-    IntegerAtom *integer_atom = malloc(sizeof *integer_atom);
+    IntegerAtom *integer_atom = mm_malloc(sizeof *integer_atom);
 
     if (!integer_atom)
         return error_malloc("atom_integer_new"), NULL;
@@ -382,14 +382,14 @@ Atom *atom_primitive_new(char c) {
         if (atom_primitive_is(atom)) {
             PrimitiveAtom *primitive_atom = atom->atom;
             if (primitive_atom->c == c)
-                /* no freeing required */
+                /* no mm_freeing required */
                 return atom;
         }
     end_GlobalAtomTable_cashing
 
 
 
-    PrimitiveAtom *primitive_atom = malloc(sizeof *primitive_atom);
+    PrimitiveAtom *primitive_atom = mm_malloc(sizeof *primitive_atom);
 
     if (!primitive_atom)
         return error_malloc("atom_primitive_new"), NULL;
@@ -417,7 +417,7 @@ Atom *atom_functiondeclaration_new(int arity, AtomList *parameters, AtomList *bo
     if (!atomlist_is(parameters) || !atomlist_purely(parameters, atom_type_name) || !atomlist_is(body))
         return error_atom("atom_functiondeclaration_new: Invalid arguments.\n"), NULL;
 
-    FunctionDeclarationAtom *functiondeclaration_atom = malloc(sizeof *functiondeclaration_atom);
+    FunctionDeclarationAtom *functiondeclaration_atom = mm_malloc(sizeof *functiondeclaration_atom);
 
     if (!functiondeclaration_atom)
         return error_malloc("atom_functiondeclaration_new"), NULL;
@@ -455,7 +455,7 @@ Atom *atom_function_new(int arity, AtomList *parameters, AtomList *body, Atom *s
     if (!primitive && (!atomlist_is(parameters) || !atomlist_is(body)))
         return error_atom("atom_function_new: Given invalid parameters AtomList and/or body AtomList and/or scope ScopeAtom.\n"), NULL;
 
-    FunctionAtom *function_atom = malloc(sizeof *function_atom);
+    FunctionAtom *function_atom = mm_malloc(sizeof *function_atom);
 
     if (!function_atom)
         return error_malloc("atom_function_new"), NULL;
@@ -503,7 +503,7 @@ Atom *atom_scope_new(AtomList *names, AtomList *binds, Atom *upper_scope) {
     if (!atom_scope_is(upper_scope) && !atom_nullscope_is(upper_scope))
         return error_atom("atom_scope_new: Given invalid upper_scope Atom.\n"), NULL;
 
-    ScopeAtom *scope_atom = malloc(sizeof *scope_atom);
+    ScopeAtom *scope_atom = mm_malloc(sizeof *scope_atom);
 
     if (!scope_atom)
         return error_malloc("atom_scope_new"), NULL;
@@ -699,7 +699,7 @@ Atom *atom_structinitializer_new(Atom *type, AtomList *fields) {
         node = node->next;
     }
 
-    StructInitializerAtom *structinitializer_atom = malloc(sizeof *structinitializer_atom);
+    StructInitializerAtom *structinitializer_atom = mm_malloc(sizeof *structinitializer_atom);
     if (!structinitializer_atom)
         return error_malloc("atom_structinitializer_new"), NULL;
 
@@ -735,7 +735,7 @@ Atom *atom_struct_new(Atom *type, Atom *scope) {
 
     // TODO check frozen
 
-    StructAtom *struct_atom = malloc(sizeof *struct_atom);
+    StructAtom *struct_atom = mm_malloc(sizeof *struct_atom);
     if (!struct_atom)
         return error_malloc("atom_struct_new"), NULL;
 
@@ -759,13 +759,13 @@ Atom *atom_string_new(char *str) {
             StringAtom *string_atom = atom->atom;
             if (strcmp(string_atom->str, str) == 0) {
                 //TODO printf("StringCacheHit \"%s\"\n", str);
-                free(str);
+                mm_free(str);
                 return atom;
             }
         }
     end_GlobalAtomTable_cashing
 
-    StringAtom *string_atom = malloc(sizeof *string_atom);
+    StringAtom *string_atom = mm_malloc(sizeof *string_atom);
     if (!string_atom)
         return error_malloc("atom_string_new"), NULL;
 
@@ -785,7 +785,7 @@ Atom *atom_string_concat(Atom *atomA, Atom *atomB) {
     StringAtom *string_atomA = atomA->atom, *string_atomB = atomB->atom;
     const char *strA = string_atomA->str, *strB = string_atomB->str;
 
-    char *str = malloc((strlen(strA)+strlen(strB)+1) * sizeof *str);
+    char *str = mm_malloc((strlen(strA)+strlen(strB)+1) * sizeof *str);
     if (!str)
         return error_malloc("atom_string_concat"), NULL;
 
@@ -840,20 +840,20 @@ Atom *atom_string_concat11(
 }
 
 Atom *atom_string_fromlong(long n) {
-    char *str = malloc((snprintf(NULL, 0, "%ld", n)+1) * sizeof *str);
+    char *str = mm_malloc((snprintf(NULL, 0, "%ld", n)+1) * sizeof *str);
     sprintf(str, "%ld", n);
     return atom_string_new(str);
 }
 
 Atom *atom_string_fromchar(char c) {
-    char *str = malloc(2 * sizeof *str);
+    char *str = mm_malloc(2 * sizeof *str);
     str[0] = c;
     str[1] = '\0';
     return atom_string_new(str);
 }
 
 Atom *atom_string_newfl(const char *str) {
-    char *new_str = malloc((strlen(str)+1) * sizeof *str);
+    char *new_str = mm_malloc((strlen(str)+1) * sizeof *str);
     if (!new_str)
         return error_malloc("atom_string_newfl"), NULL;
     sprintf(new_str, "%s", str);
@@ -899,7 +899,7 @@ const char *atomlist_str(AtomList *lst) {
 }
 
 AtomList *atomlist_new(AtomListNode *head) {
-    AtomList *lst = malloc(sizeof *lst);
+    AtomList *lst = mm_malloc(sizeof *lst);
 
     if (!lst)
         return error_malloc("atomlist_new"), NULL;
@@ -922,7 +922,7 @@ static AtomListNode *atomlistnode_new(Atom *atom, AtomListNode *next) {
     if (!atom_is(atom))
         return error_atomlist("atomlistnode_new: Given invalid atom.\n"), NULL;
 
-    AtomListNode *node = malloc(sizeof *node);
+    AtomListNode *node = mm_malloc(sizeof *node);
 
     if (!node)
         return error_malloc("atomlistnode_new"), NULL;

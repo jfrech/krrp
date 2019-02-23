@@ -11,31 +11,64 @@ extern Options* GlobalOptions;
 extern AtomList* GlobalAtomTable;
 extern AtomList* GlobalAtomTableMutable;
 
+static void memorymanagement_ABORT(const char *msg);
+static void memorymanagement_FATAL_ERROR(const char *msg);
 
-void memorymanagement_error(const char *msg) {
-    fprintf(stderr, "A fatal memory error has occurred.\n    %s\n", msg);
+static long allocations = 0;
+static long de_allocations = 0;
+static long nullpointer_frees = 0;
+
+void *mm_malloc(size_t n) {
+    allocations++;
+
+    void *ptr = malloc(n);
+
+    if (!ptr)
+        memorymanagement_ABORT("mm_malloc");
+
+    return ptr;
 }
 
-void memorymanagement_free_all() {
-    if (GlobalOptions)
-        free(GlobalOptions);
+void mm_free(void *ptr) {
+    if (!ptr) { nullpointer_frees++; return; }
+    de_allocations++;
 
-    if (GlobalAtomTable)
-        free_gat(GlobalAtomTable);
-
-    if (GlobalAtomTableMutable)
-        free_gat(GlobalAtomTableMutable);
+    free(ptr);
 }
 
-void memorymanagement_abort(const char *msg) {
+void mm_print_status() {
+    // for (int i = 0; i < 1000; i++) mm_free(NULL);
+    printf("  Allocated: %ld\nDeallocated: %ld\n", allocations, de_allocations);
+    printf("Discrepency: %ld (freeing NULL: %ld)\n", allocations-de_allocations, nullpointer_frees);
+}
+
+static void memorymanagement_ABORT(const char *msg) {
     memorymanagement_free_all();
 
-    memorymanagement_error(msg);
+    memorymanagement_FATAL_ERROR(msg);
+    exit(EXIT_FAILURE);
+}
+
+static void memorymanagement_FATAL_ERROR(const char *msg) {
+    fprintf(stderr, "A fatal memory error has occurred.\n    %s\n", msg);
+
     exit(EXIT_FAILURE);
 }
 
 
-void free_gat(AtomList *gat) {
+void memorymanagement_free_all() {
+    if (GlobalOptions)
+        mm_free(GlobalOptions);
+
+    if (GlobalAtomTable)
+        mm_free_gat(GlobalAtomTable);
+
+    if (GlobalAtomTableMutable)
+        mm_free_gat(GlobalAtomTableMutable);
+}
+
+
+void mm_free_gat(AtomList *gat) {
     printf("Freeing %d ...\n", atomlist_len(gat));
 
     AtomListNode *node = gat->head;
@@ -53,8 +86,8 @@ void atom_free(Atom *atom) {
         return;
 
     if (!atom_is(atom)) {
-        memorymanagement_error("atom_free: Malformed atom -- cannot properly free.\n");
-        free(atom);
+        memorymanagement_FATAL_ERROR("atom_free: Malformed atom -- cannot properly mm_free.\n");
+        mm_free(atom);
         return;
     }
 
@@ -66,22 +99,22 @@ void atom_free(Atom *atom) {
 
     else if (atom->type == atom_type_name) {
         NameAtom *name_atom = atom->atom;
-        free(name_atom->name);
-        free(name_atom);
+        mm_free(name_atom->name);
+        mm_free(name_atom);
     }
     else if (atom->type == atom_type_integer) {
         IntegerAtom *integer_atom = atom->atom;
-        free(integer_atom);
+        mm_free(integer_atom);
     }
     else if (atom->type == atom_type_primitive) {
         PrimitiveAtom *primitive_atom = atom->atom;
-        free(primitive_atom);
+        mm_free(primitive_atom);
     }
     else if (atom->type == atom_type_functiondeclaration) {
         FunctionDeclarationAtom *functiondeclaration_atom = atom->atom;
         atomlist_free(functiondeclaration_atom->parameters);
         atomlist_free(functiondeclaration_atom->body);
-        free(functiondeclaration_atom);
+        mm_free(functiondeclaration_atom);
     }
     else if (atom->type == atom_type_function) {
         FunctionAtom *function_atom = atom->atom;
@@ -89,33 +122,33 @@ void atom_free(Atom *atom) {
             atomlist_free(function_atom->parameters);
         if (function_atom->body)
             atomlist_free(function_atom->body);
-        free(function_atom->primitive);
-        free(function_atom);
+        mm_free(function_atom->primitive);
+        mm_free(function_atom);
     }
     else if (atom->type == atom_type_scope) {
         ScopeAtom *scope_atom = atom->atom;
         atomlist_free(scope_atom->names);
         atomlist_free(scope_atom->binds);
-        free(scope_atom);
+        mm_free(scope_atom);
     }
     else if (atom->type == atom_type_structinitializer) {
         StructInitializerAtom *structinitializer_atom = atom->atom;
         atomlist_free(structinitializer_atom->fields);
-        free(structinitializer_atom);
+        mm_free(structinitializer_atom);
     }
     else if (atom->type == atom_type_struct) {
         StructAtom *struct_atom = atom->atom;
-        free(struct_atom);
+        mm_free(struct_atom);
     }
     else if (atom->type == atom_type_string) {
         StringAtom *string_atom = atom->atom;
-        free(string_atom->str);
-        free(string_atom);
+        mm_free(string_atom->str);
+        mm_free(string_atom);
     }
     else
-        memorymanagement_error("atom_free: Trying to free atom of unknown type\n");
+        memorymanagement_FATAL_ERROR("atom_free: Trying to mm_free atom of unknown type\n");
 
-    free(atom);
+    mm_free(atom);
 }
 
 
@@ -125,7 +158,7 @@ void atomlist_free(AtomList *lst) {
         return;
 
     AtomListNode *node = lst->head;
-    free(lst);
+    mm_free(lst);
 
     while (node) {
         AtomListNode *nnode = node->next;
@@ -139,5 +172,5 @@ void atomlistnode_free(AtomListNode *node) {
     if (!node)
         return;
 
-    free(node);
+    mm_free(node);
 }

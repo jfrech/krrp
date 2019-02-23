@@ -149,13 +149,13 @@ static int parse_literal(const char *source, int p, AtomList *parsed) {
     if (source[p] != '.')
         return error_parse(source, s, "parse_literal: Unfinished literal."), -1;
 
-    char *literalstr = malloc((p-s) * sizeof *literalstr);
+    char *literalstr = mm_malloc((p-s) * sizeof *literalstr);
     for (int j = 0; j < p-s-1; j++)
         literalstr[j] = source[s+1+j];
     literalstr[p-s-1] = '\0';
 
     atomlist_push(parsed, atom_integer_new(atol(literalstr))); // TODO: check if string is valid literal
-    free(literalstr);
+    mm_free(literalstr);
 
     return p;
 }
@@ -165,7 +165,7 @@ static int parse_name(const char *source, int p, AtomList *parsed) {
     ;//TODO    return error_parse(source, p, "parse_name: Attempting to parse non-name."), -1;
 
     if (source[p] != '[') {
-        char *name = malloc(2 * sizeof *name);
+        char *name = mm_malloc(2 * sizeof *name);
         if (!name)
             return error_malloc("parse_name"), -1;
 
@@ -183,7 +183,7 @@ static int parse_name(const char *source, int p, AtomList *parsed) {
     if (source[p] != ']')
         return error_parse(source, p, "parse_name: Unfinished name."), -1;
 
-    char *name = malloc((p-s+1) * sizeof *name);
+    char *name = mm_malloc((p-s+1) * sizeof *name);
     if (!name)
         return error_malloc("parse_name"), -1;
 

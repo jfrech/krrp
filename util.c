@@ -4,10 +4,11 @@
 
 #include "error.h"
 #include "options.h"
+#include "memorymanagement.h"
 extern Options *GlobalOptions;
 
 char *strdup(const char *str) {
-    char *dup = malloc((strlen(str)+1) * sizeof *dup);
+    char *dup = mm_malloc((strlen(str)+1) * sizeof *dup);
     if (!dup)
         return error_malloc("strdup"), NULL;
 
@@ -36,7 +37,7 @@ char *stresc(const char *str) {
     for (int j = 0; str[j]; j++)
         len += escaped_character_length(str[j]);
 
-    char *estr = malloc((len+1) * sizeof *str), *s = estr;
+    char *estr = mm_malloc((len+1) * sizeof *str), *s = estr;
     unsigned char c;
 
     for (int j = 0; (c = str[j]); j++) {
@@ -60,5 +61,5 @@ void print_escaped_source(const char *source) {
     printf("=== Source ===\n");
     char *esource = stresc(source);
     printf(".> \"%s\"\n", esource);
-    free(esource);
+    mm_free(esource);
 }

@@ -3,11 +3,12 @@
 
 #include "error.h"
 #include "options.h"
+#include "memorymanagement.h"
 
 Options *GlobalOptions;
 
 void globaloptions_init() {
-    GlobalOptions = malloc(sizeof *GlobalOptions);
+    GlobalOptions = mm_malloc(sizeof *GlobalOptions);
 
     if (!GlobalOptions) {
         error_malloc("globaloptions_init");

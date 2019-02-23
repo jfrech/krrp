@@ -23,7 +23,7 @@ void test(const char *source, Atom *expected) {
     }
 
     atomlist_free(parsed);
-    free(esource);
+    mm_free(esource);
 }
 
 void test_all() {
