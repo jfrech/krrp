@@ -31,10 +31,8 @@ void globalatomtable_init() {
 }
 
 
-
-/*** Atom ***/
-static Atom *atom_new_local(atom_type type, void *atom) {
-    Atom *natom = mm_malloc("atom_new_local", sizeof *natom);
+static Atom *_atom_new(atom_type type, void *atom) {
+    Atom *natom = mm_malloc("_atom_new", sizeof *natom);
 
     natom->type = type;
     natom->atom = atom;
@@ -43,7 +41,7 @@ static Atom *atom_new_local(atom_type type, void *atom) {
 }
 
 Atom *atom_new(atom_type type, void *atom) {
-    Atom *natom = atom_new_local(type, atom);
+    Atom *natom = _atom_new(type, atom);
 
     if (natom->type == atom_type_scope || natom->type == atom_type_function)
         atomlist_push_front(GlobalAtomTableMutable, natom);
@@ -70,15 +68,9 @@ bool atom_is(Atom *atom) {
     return true;
 }
 
-bool atom_purely(Atom *atom, atom_type type) {
-    if (!atom_is(atom))
-        return false;
-
-    return atom->type == type;
-}
-
 bool atom_equal(Atom *atomA, Atom *atomB) {
-    /* TODO Due to the GlobalAtomTable, equivalent atoms are cached and thereby have the same pointer. */
+    /* Due to the GlobalAtomTable, equivalent atoms are cached and thereby
+    equal to one another iff their pointers are. */
     return atomA == atomB;
 }
 
@@ -88,7 +80,7 @@ const char *atom_repr(Atom *atom) {
 }
 
 // TODO
-Atom *atom_struct_helper_repr(Atom *scope) {
+static Atom *atom_struct_helper_repr(Atom *scope) {
     Atom *repr = atom_string_newfl("");
     ScopeAtom *scope_atom = scope->atom;
     AtomListNode *noden = scope_atom->names->head;
@@ -107,7 +99,7 @@ Atom *atom_struct_helper_repr(Atom *scope) {
 
 Atom *atom_representation(Atom *atom) {
     if (!atom_is(atom))
-        return atom_string_newfl("NULL (!)");
+        return atom_string_newfl("NULLPOINTER");
 
     if (atom->type == atom_type_null)
         return atom_string_newfl("Null");
@@ -250,55 +242,41 @@ Atom *atom_representation(Atom *atom) {
     else return atom_string_newfl("UnknownAtom");
 }
 
+
 // start_GlobalAtomTable_cashing ... end_GlobalAtomTable_cashing
 #define start_GlobalAtomTable_cashing { \
     AtomListNode *node = GlobalAtomTable->head; \
     while (node) { Atom *atom = node->atom;
 #define end_GlobalAtomTable_cashing node = node->next; } }
 
-Atom *atom_null_new() {
-    if (!GlobalNullAtom)
-        GlobalNullAtom = atom_new(atom_type_null, NULL);
 
-    return GlobalNullAtom;
+bool atom_is_of_type(Atom *atom, atom_type type) {
+    return atom_is(atom) && atom->type == type;
 }
 
-bool atom_null_is(Atom *atom) {
-    return atom_is(atom) && atom->type == atom_type_null;
-}
+#define MAKE__ATOM_NULLX_NEW(x, X) \
+    Atom *atom_##x##_new() { \
+        if (!Global##X##Atom) \
+            Global##X##Atom = atom_new(atom_type_##x, NULL); \
+        return Global##X##Atom; }
 
-Atom *atom_nullcondition_new() {
-    if (!GlobalNullConditionAtom)
-        GlobalNullConditionAtom = atom_new(atom_type_nullcondition, NULL);
+#define MAKE__ATOM_NULLX_IS(x) \
+    bool atom_##x##_is(Atom *atom) { \
+        return atom_is_of_type(atom, atom_type_##x); }
 
-    return GlobalNullConditionAtom;
-}
+#define MAKE__ATOM_NULLX(x, X) \
+    MAKE__ATOM_NULLX_NEW(x, X) \
+    MAKE__ATOM_NULLX_IS(x)
 
-bool atom_nullcondition_is(Atom *atom) {
-    return atom_is(atom) && atom->type == atom_type_nullcondition;
-}
+MAKE__ATOM_NULLX(null, Null)
+MAKE__ATOM_NULLX(nullcondition, NullCondition)
+MAKE__ATOM_NULLX(nullscope, NullScope)
+MAKE__ATOM_NULLX(Enull, ENull)
 
-Atom *atom_nullscope_new() {
-    if (!GlobalNullScopeAtom)
-        GlobalNullScopeAtom = atom_new(atom_type_nullscope, NULL);
+#undef MAKE__ATOM_NULLX_NEW
+#undef MAKE__ATOM_NULLX_IS
+#undef MAKE__ATOM_NULLX
 
-    return GlobalNullScopeAtom;
-}
-
-bool atom_nullscope_is(Atom *atom) {
-    return atom_is(atom) && atom->type == atom_type_nullscope;
-}
-
-Atom *atom_Enull_new() {
-    if (!GlobalENullAtom)
-        GlobalENullAtom = atom_new(atom_type_Enull, NULL);
-
-    return GlobalENullAtom;
-}
-
-bool atom_Enull_is(Atom *atom) {
-    return atom_is(atom) && atom->type == atom_type_Enull;
-}
 
 Atom *atom_name_new(char *name) {
     start_GlobalAtomTable_cashing
@@ -319,18 +297,9 @@ Atom *atom_name_new(char *name) {
 }
 
 bool atom_name_is(Atom *atom) {
-    return atom_is(atom) && atom->type == atom_type_name;
-
-    if (!atom_is(atom) || atom->type != atom_type_name)
-        return false;
-
-    NameAtom *name_atom = atom->atom;
-
-    if (!name_atom->name)
-        return error_atom("atom_name_is: Malformed NameAtom.\n"), false;
-
-    return true;
+    return atom_is_of_type(atom, atom_type_name);
 }
+
 
 Atom *atom_integer_new(integer value) {
     start_GlobalAtomTable_cashing
@@ -350,8 +319,9 @@ Atom *atom_integer_new(integer value) {
 }
 
 bool atom_integer_is(Atom *atom) {
-    return atom_is(atom) && atom->type == atom_type_integer;
+    return atom_is_of_type(atom, atom_type_integer);
 }
+
 
 Atom *atom_primitive_new(char c) {
     start_GlobalAtomTable_cashing
@@ -371,8 +341,9 @@ Atom *atom_primitive_new(char c) {
 }
 
 bool atom_primitive_is(Atom *atom) {
-    return atom_is(atom) && atom->type == atom_type_primitive;
+    return atom_is_of_type(atom, atom_type_primitive);
 }
+
 
 Atom *atom_functiondeclaration_new(int arity, AtomList *parameters, AtomList *body) {
     /*start_GlobalAtomTable_cashing
@@ -385,10 +356,13 @@ Atom *atom_functiondeclaration_new(int arity, AtomList *parameters, AtomList *bo
         }
     end_GlobalAtomTable_cashing TODO*/
 
-    if (!atomlist_is(parameters) || !atomlist_purely(parameters, atom_type_name) || !atomlist_is(body))
+    if (!atomlist_is(parameters)
+    || !atomlist_purely(parameters, atom_type_name)
+    || !atomlist_is(body))
         return error_atom("atom_functiondeclaration_new: Invalid arguments.\n"), NULL;
 
-    FunctionDeclarationAtom *functiondeclaration_atom = mm_malloc("atom_functiondeclaration_new", sizeof *functiondeclaration_atom);
+    FunctionDeclarationAtom *functiondeclaration_atom
+        = mm_malloc("atom_functiondeclaration_new", sizeof *functiondeclaration_atom);
     functiondeclaration_atom->arity = arity;
     functiondeclaration_atom->parameters = parameters;
     functiondeclaration_atom->body = body;
@@ -397,17 +371,17 @@ Atom *atom_functiondeclaration_new(int arity, AtomList *parameters, AtomList *bo
 }
 
 bool atom_functiondeclaration_is(Atom *atom) {
-    return atom_is(atom) && atom->type == atom_type_functiondeclaration;
-
-    if (!atom_is(atom) || atom->type != atom_type_functiondeclaration)
+    if (!atom_is_of_type(atom, atom_type_functiondeclaration))
         return false;
 
+    /* TODO
     FunctionDeclarationAtom *functiondeclaration_atom = atom->atom;
     if (functiondeclaration_atom->arity < 0
     || !atomlist_is(functiondeclaration_atom->parameters)
     || !atomlist_purely(functiondeclaration_atom->parameters, atom_type_name)
     || !atomlist_is(functiondeclaration_atom->body))
         return error_atom("atom_functiondeclaration_is: Malformed FunctionDeclarationAtom.\n"), false;
+*/
 
     return true;
 }
@@ -433,10 +407,10 @@ Atom *atom_function_new(int arity, AtomList *parameters, AtomList *body, Atom *s
 }
 
 bool atom_function_is(Atom *atom) {
-    return atom_is(atom) && atom->type == atom_type_function;
-
-    if (!atom_is(atom) || atom->type != atom_type_function)
+    if (!atom_is_of_type(atom, atom_type_function))
         return false;
+
+    /* TODO
 
     FunctionAtom *function_atom = atom->atom;
 
@@ -450,7 +424,7 @@ bool atom_function_is(Atom *atom) {
     else {
         if (!atomlist_is(function_atom->parameters) || !atomlist_is(function_atom->body))
             return error_atom("atom_function_is: Malformed FunctionAtom.\n"), false;
-    }
+    }*/
 
     return true;
 }
@@ -494,12 +468,8 @@ Atom *atom_scope_freeze(Atom *scope) {
             if (scope_atom->is_frozen
             && atomlist_equal(scope_atom->names, original_scope_atom->names)
             && atomlist_equal(scope_atom->binds, original_scope_atom->binds)
-            && atom_equal(scope_atom->upper_scope, original_scope_atom->upper_scope)) {
-                //TODO WAKKA
-                //printf("HIT\n");
-                atom_free(scope);
-                return atom;
-            }
+            && atom_equal(scope_atom->upper_scope, original_scope_atom->upper_scope))
+                return atom_free(scope), atom;
         }
     end_GlobalAtomTable_cashing
 
@@ -513,7 +483,7 @@ Atom *atom_scope_new_empty() {
 }
 
 bool atom_scope_is(Atom *atom) {
-    if (!atom_is(atom) || atom->type != atom_type_scope)
+    if (!atom_is_of_type(atom, atom_type_scope))
         return false;
 
     if (!GlobalOptions)
@@ -641,10 +611,9 @@ Atom *atom_structinitializer_new(Atom *type, AtomList *fields) {
     start_GlobalAtomTable_cashing
         if (atom_structinitializer_is(atom)) {
             StructInitializerAtom *structinitializer_atom = atom->atom;
-            if (atom_equal(structinitializer_atom->type, type) && atomlist_equal(structinitializer_atom->fields, fields)) {
-                atomlist_free(fields);
-                return atom;
-            }
+            if (atom_equal(structinitializer_atom->type, type)
+            && atomlist_equal(structinitializer_atom->fields, fields))
+                return atomlist_free(fields), atom;
         }
     end_GlobalAtomTable_cashing
 
@@ -668,7 +637,7 @@ Atom *atom_structinitializer_new(Atom *type, AtomList *fields) {
 }
 
 bool atom_structinitializer_is(Atom *atom) {
-    if (!atom_is(atom) || atom->type != atom_type_structinitializer)
+    if (!atom_is_of_type(atom, atom_type_structinitializer))
         return false;
 
     StructInitializerAtom *structinitializer_atom = atom->atom;
@@ -702,7 +671,7 @@ Atom *atom_struct_new(Atom *type, Atom *scope) {
 }
 
 bool atom_struct_is(Atom *atom) {
-    if (!atom_is(atom) || atom->type != atom_type_struct)
+    if (!atom_is_of_type(atom, atom_type_struct))
         return false;
 
     StructAtom *struct_atom = atom->atom;
@@ -713,11 +682,8 @@ Atom *atom_string_new(char *str) {
     start_GlobalAtomTable_cashing
         if (atom_string_is(atom)) {
             StringAtom *string_atom = atom->atom;
-            if (strcmp(string_atom->str, str) == 0) {
-                //TODO printf("StringCacheHit \"%s\"\n", str);
-                mm_free("atom_string_new", str);
-                return atom;
-            }
+            if (strcmp(string_atom->str, str) == 0)
+                return mm_free("atom_string_new", str), atom;
         }
     end_GlobalAtomTable_cashing
 
@@ -729,12 +695,12 @@ Atom *atom_string_new(char *str) {
 }
 
 bool atom_string_is(Atom *atom) {
-    return atom_is(atom) && atom->type == atom_type_string;
+    return atom_is_of_type(atom, atom_type_string);
 }
 
 Atom *atom_string_concat(Atom *atomA, Atom *atomB) {
     if (!atom_string_is(atomA) || !atom_string_is(atomB))
-        return error_atom("atom_string_concat: Expected two atoms.\n"), NULL;
+        return error_atom("atom_string_concat: Expected two string atoms.\n"), NULL;
 
     StringAtom *string_atomA = atomA->atom, *string_atomB = atomB->atom;
     const char *strA = string_atomA->str, *strB = string_atomB->str;
@@ -745,64 +711,30 @@ Atom *atom_string_concat(Atom *atomA, Atom *atomB) {
     return atom_string_new(str);
 }
 
-Atom *atom_string_concat3(Atom *atomA, Atom *atomB, Atom *atomC) {
-    return atom_string_concat(atomA, atom_string_concat(atomB, atomC));
-}
-Atom *atom_string_concat5(Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, Atom *atomE) {
-    return atom_string_concat(atomA, atom_string_concat(atomB, atom_string_concat(atomC, atom_string_concat(atomD, atomE))));
-}
-Atom *atom_string_concat6(Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, Atom *atomE, Atom *atomF) {
-    return atom_string_concat(atomA, atom_string_concat(atomB, atom_string_concat(atomC, atom_string_concat(atomD, atom_string_concat(atomE, atomF)))));
-}
-Atom *atom_string_concat7(Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, Atom *atomE, Atom *atomF, Atom *atomG) {
-    return atom_string_concat(atomA, atom_string_concat(atomB, atom_string_concat(atomC, atom_string_concat(atomD, atom_string_concat(atomE, atom_string_concat(atomF, atomG))))));
-}
-Atom *atom_string_concat9(
-    Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, Atom *atomE,
-    Atom *atomF, Atom *atomG, Atom *atomH, Atom *atomI
-) {
-    return atom_string_concat(atomA, atom_string_concat(atomB,
-    atom_string_concat(atomC, atom_string_concat(atomD,
-    atom_string_concat(atomE, atom_string_concat(atomF,
-    atom_string_concat(atomG, atom_string_concat(atomH,
-    atomI))))))));
-}
-
-Atom *atom_string_concat10(
-    Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, Atom *atomE,
-    Atom *atomF, Atom *atomG, Atom *atomH, Atom *atomI, Atom *atomJ
-) {
-    return atom_string_concat(atomA, atom_string_concat(atomB,
-    atom_string_concat(atomC, atom_string_concat(atomD,
-    atom_string_concat(atomE, atom_string_concat(atomF,
-    atom_string_concat(atomG, atom_string_concat(atomH,
-    atom_string_concat(atomI, atomJ)))))))));
-}
-Atom *atom_string_concat11(
-    Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, Atom *atomE,
-    Atom *atomF, Atom *atomG, Atom *atomH, Atom *atomI, Atom *atomJ,
-    Atom *atomK
-) {
-    return atom_string_concat(atomA, atom_string_concat(atomB,
-    atom_string_concat(atomC, atom_string_concat(atomD,
-    atom_string_concat(atomE, atom_string_concat(atomF,
-    atom_string_concat(atomG, atom_string_concat(atomH,
-    atom_string_concat(atomI, atom_string_concat(atomJ, atomK))))))))));
-}
+Atom *atom_string_concat3(Atom *atomA, Atom *atomB, Atom *atomC) { return atom_string_concat(atomA, atom_string_concat(atomB, atomC)); }
+Atom *atom_string_concat5(Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, Atom *atomE) { return atom_string_concat(atomA, atom_string_concat(atomB, atom_string_concat(atomC, atom_string_concat(atomD, atomE)))); }
+Atom *atom_string_concat6(Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, Atom *atomE, Atom *atomF) { return atom_string_concat(atomA, atom_string_concat(atomB, atom_string_concat(atomC, atom_string_concat(atomD, atom_string_concat(atomE, atomF))))); }
+Atom *atom_string_concat7(Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, Atom *atomE, Atom *atomF, Atom *atomG) { return atom_string_concat(atomA, atom_string_concat(atomB, atom_string_concat(atomC, atom_string_concat(atomD, atom_string_concat(atomE, atom_string_concat(atomF, atomG)))))); }
+Atom *atom_string_concat9(Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, Atom *atomE, Atom *atomF, Atom *atomG, Atom *atomH, Atom *atomI) { return atom_string_concat(atomA, atom_string_concat(atomB, atom_string_concat(atomC, atom_string_concat(atomD, atom_string_concat(atomE, atom_string_concat(atomF, atom_string_concat(atomG, atom_string_concat(atomH, atomI)))))))); }
+Atom *atom_string_concat10(Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, Atom *atomE, Atom *atomF, Atom *atomG, Atom *atomH, Atom *atomI, Atom *atomJ) { return atom_string_concat(atomA, atom_string_concat(atomB, atom_string_concat(atomC, atom_string_concat(atomD, atom_string_concat(atomE, atom_string_concat(atomF, atom_string_concat(atomG, atom_string_concat(atomH, atom_string_concat(atomI, atomJ))))))))); }
+Atom *atom_string_concat11(Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, Atom *atomE, Atom *atomF, Atom *atomG, Atom *atomH, Atom *atomI, Atom *atomJ, Atom *atomK) { return atom_string_concat(atomA, atom_string_concat(atomB, atom_string_concat(atomC, atom_string_concat(atomD, atom_string_concat(atomE, atom_string_concat(atomF, atom_string_concat(atomG, atom_string_concat(atomH, atom_string_concat(atomI, atom_string_concat(atomJ, atomK)))))))))); }
 
 Atom *atom_string_fromlong(long n) {
     char *str = mm_malloc("atom_string_fromlong", (snprintf(NULL, 0, "%ld", n)+1) * sizeof *str);
     sprintf(str, "%ld", n);
+
     return atom_string_new(str);
 }
 
 Atom *atom_string_fromchar(char c) {
     char *str = mm_malloc("atom_string_fromchar", sizeof *str + 1);
-    str[0] = c;
-    str[1] = '\0';
+    str[0] = c, str[1] = '\0';
+
     return atom_string_new(str);
 }
 
+// TODO :: Remove the need for `newfl`.
+// `fl`: from literal
 Atom *atom_string_newfl(const char *str) {
     char *new_str = mm_malloc("atom_string_newfl", (strlen(str)+1) * sizeof *str);
     sprintf(new_str, "%s", str);
@@ -817,7 +749,9 @@ Atom *atom_string_newcopy(const char *str) {
 #undef start_GlobalAtomTable_cashing
 #undef end_GlobalAtomTable_cashing
 
-/* === AtomList === */
+
+
+// TODO :: Module `atomlist.h`
 
 static AtomListNode *atomlistnode_new(Atom *atom, AtomListNode *next);
 
@@ -831,20 +765,16 @@ Atom *atomlist_representation(AtomList *lst) {
     Atom *repr = atom_string_newfl("[");
     AtomListNode *node = lst->head;
     while (node) {
-        if (node->next)
-            repr = atom_string_concat3(repr, atom_representation(node->atom), atom_string_newfl(", "));
-        else
-            repr = atom_string_concat3(repr, atom_representation(node->atom), atom_string_newfl("]"));
+        repr = atom_string_concat3(
+            repr,
+            atom_representation(node->atom),
+            atom_string_newfl(node->next ? ", " : "]")
+        );
+
         node = node->next;
     }
 
     return repr;
-}
-
-// TODO
-const char *atomlist_str(AtomList *lst) {
-    StringAtom *string_atom = atomlist_representation(lst)->atom;
-    return string_atom->str;
 }
 
 AtomList *atomlist_new(AtomListNode *head) {
@@ -980,7 +910,7 @@ bool atomlist_purely(AtomList *lst, atom_type type) {
 
     AtomListNode *node = lst->head;
     while (node) {
-        if (!atom_purely(node->atom, type))
+        if (!atom_is(node->atom) || node->atom->type != type)
             return false;
 
         node = node->next;

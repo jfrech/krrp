@@ -148,7 +148,6 @@ bool atomlist_is(AtomList *lst);
 
 //TODO
 Atom *atomlist_representation(AtomList *lst);
-const char *atomlist_str(AtomList *lst);
 
 void atomlist_push(AtomList *lst, Atom *atom);
 void atomlist_push_front(AtomList *lst, Atom *atom);

@@ -22,9 +22,18 @@
 #include "test.h"
 #include "memorymanagement.h"
 
+
 // TODO :: Infinite recursion.
 // TODO: potentially implement AtomList as a doubly linked list.
 // TODO: potentially implement own special color markup
+
+
+// TODO
+static const char *atomlist_str(AtomList *lst) {
+    StringAtom *string_atom = atomlist_representation(lst)->atom;
+    return string_atom->str;
+}
+
 
 int main(int argc, char **argv) {
     globaloptions_init();
