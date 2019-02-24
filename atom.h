@@ -157,6 +157,5 @@ bool atomlist_empty(AtomList *lst);
 AtomList *atomlist_copy(AtomList *lst);
 bool atomlist_equal(AtomList *lstA, AtomList *lstB);
 bool atomlist_purely(AtomList *lst, atom_type type);
-void atomlist_remove_by_pointer(AtomList *lst, Atom *atom);
 
 #endif

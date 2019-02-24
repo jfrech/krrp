@@ -23,6 +23,8 @@ AtomList *GlobalAtomTable;
 AtomList *GlobalAtomTableMutable;
 Atom *GlobalNullAtom, *GlobalNullConditionAtom, *GlobalNullScopeAtom, *GlobalENullAtom;
 
+static void atomlist_remove_by_pointer(AtomList *lst, Atom *atom);
+
 void globalatomtable_init() {
     GlobalAtomTable = atomlist_new(NULL);
     GlobalAtomTableMutable = atomlist_new(NULL);
@@ -823,19 +825,6 @@ void atomlist_push_front(AtomList *lst, Atom *atom) {
     lst->head = node;
 }
 
-// TODO Atom *atomlist_pop()
-/*
-Atom *atomlist_pop_back(AtomList *lst) {
-    if (!atomlist_is(lst)
-        return NULL;
-
-    if (!lst->head)
-        return error_atomlist("atomlist_pop_back: List length is zero.\n"), NULL;
-
-    AtomListNode *node = lst->head;
-    while
-}*/
-
 Atom *atomlist_pop_front(AtomList *lst) {
     if (!atomlist_is(lst))
         return NULL;
@@ -919,7 +908,7 @@ bool atomlist_purely(AtomList *lst, atom_type type) {
     return true;
 }
 
-void atomlist_remove_by_pointer(AtomList *lst, Atom *atom) {
+static void atomlist_remove_by_pointer(AtomList *lst, Atom *atom) {
     if (!atomlist_is(lst))
         return;
 

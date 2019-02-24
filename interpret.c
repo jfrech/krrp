@@ -13,31 +13,26 @@ extern Options *GlobalOptions;
 
 #define E(...) return error_interpret(__VA_ARGS__), atom_Enull_new();
 
-Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active) {
-    if (!GlobalOptions)
-        E("interpret: Cannot access global options.\n")
-    if (recursion_depth > GlobalOptions->maximum_interpretation_recursion_depth)
-        E("interpret: Maximum interpretation iterations reached.\n");
+#define ASSERT(cnd, ...) \
+    { if (!(cnd)) \
+        E(__VA_ARGS__) }
 
-    if (!atomlist_is(atoms))
-        E("interpret: Given invalid atoms AtomList.\n")
-    if (!atom_scope_is(scope))
-        E("interpret: Given invalid scope ScopeAtom.\n")
+Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active) {
+    ASSERT(GlobalOptions, "interpret: Cannot access global options.\n")
+    ASSERT(recursion_depth < GlobalOptions->maximum_interpretation_recursion_depth, "interpret: Maximum interpretation iterations reached.\n")
+    ASSERT(atomlist_is(atoms), "interpret: Given invalid atoms AtomList.\n");
+    ASSERT(atom_scope_is(scope), "interpret: Given invalid scope ScopeAtom.\n");
 
     int execution_depth = 0;
 
     while (atoms->head) {
         Atom *atom = atomlist_pop_front(atoms);
 
-        if (!atom_is(atom))
-            E("interpret: Encountered non-atom.\n")
-
+        ASSERT(atom_is(atom), "interpret: Encountered non-atom.\n")
 
         if (atom_name_is(atom)) {
             Atom *unbound = atom_scope_unbind(scope, atom);
-
-            if (!atom_is(unbound))
-                E("interpret: Could not find name %s in scope.\n", atom_repr(atom))
+            ASSERT(atom_is(unbound), "interpret: Could not find name %s in scope.\n", atom_repr(atom))
 
             if (atom_function_is(unbound) || atom_structinitializer_is(unbound)) {
                 atomlist_push_front(atoms, unbound);
@@ -63,6 +58,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
 
 
         /* execution_depth >= 0 guaranteed */
+        ASSERT(execution_depth >= 0, "Execution depth in an invalid state (%d).", execution_depth)
 
 
         if (atom_function_is(atom)) {
@@ -79,30 +75,25 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
             if (p && (strcmp(p, "!") == 0 || strcmp(p, "?") == 0 || strcmp(p, "|") == 0 || strcmp(p, "&") == 0)) {
                 if (strcmp(p, "!") == 0) {
                     Atom *name = atomlist_pop_front(atoms);
-                    if (!atom_name_is(name))
-                        E("interpret: Bind needs NameAtom, got %s.\n", atom_repr(name))
+                    ASSERT(atom_name_is(name), "interpret: Bind needs NameAtom, got %s.\n", atom_repr(name))
 
                     Atom *bind = interpret(recursion_depth+1, atoms, scope, active);
-                    if (!atom_is(bind))
-                        E("interpret: Bind needs Atom, got %s.\n", atom_repr(bind))
+                    ASSERT(atom_is(bind), "interpret: Bind needs Atom, got %s.\n", atom_repr(bind))
 
                     // TODO :: possibly `active &&` in this condition
-                    if (!atom_scope_push(scope, name, bind))
-                        E("interpret: Could not bind %s.\n", atom_repr(name))
+                    ASSERT(atom_scope_push(scope, name, bind), "interpret: Could not bind %s.\n", atom_repr(name))
                 }
 
                 else if (strcmp(p, "?") == 0) {
                     if (!active) {
                         for (int j = 0; j < 3; j++)
-                            if (!atom_nullcondition_is(interpret(recursion_depth+1, atoms, scope, false)))
-                                E("interpret: Conditional primitive expected three arguments, got too few.\n")
+                            ASSERT(atom_nullcondition_is(interpret(recursion_depth+1, atoms, scope, false)), "interpret: Conditional primitive expected three arguments, got too few.\n")
 
                         return atom_nullcondition_new();
                     }
 
                     Atom *condition = interpret(recursion_depth+1, atoms, scope, true);
-                    if (!atom_integer_is(condition))
-                        E("interpret: Conditional primitive expected integer as condition, got %s.\n", atom_repr(condition))
+                    ASSERT(atom_integer_is(condition), "interpret: Conditional primitive expected integer as condition, got %s.\n", atom_repr(condition))
 
                     Atom *return_;
                     if (((IntegerAtom *) condition->atom)->value) {
@@ -141,17 +132,14 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
 
             // TODO
             if (p) {
-                if (execution_depth != 0)
-                    E("interpret: First-order primitive called with remaining execution depth (%d).\n", execution_depth)
+                ASSERT(execution_depth == 0, "interpret: First-order primitive called with remaining execution depth (%d).\n", execution_depth)
 
                 if (strcmp(p, "=") == 0) {
                     Atom *atomA = interpret(recursion_depth+1, atoms, scope, true);
-                    if (!atom_is(atomA))
-                        E("interpret: = expected atom as first argument (%s).\n", atom_repr(atomA))
+                    ASSERT(atom_is(atomA), "interpret: = expected atom as first argument (%s).\n", atom_repr(atomA))
 
                     Atom *atomB = interpret(recursion_depth+1, atoms, scope, true);
-                    if (!atom_is(atomB))
-                        E("interpret: = expected atom as second argument (%s).\n", atom_repr(atomA))
+                    ASSERT(atom_is(atomB), "interpret: = expected atom as second argument (%s).\n", atom_repr(atomA))
 
                     return atom_integer_new(atom_equal(atomA, atomB));
                 }
@@ -160,12 +148,10 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 // TODO
                 else {
                     Atom *atomA = interpret(recursion_depth+1, atoms, scope, true);
-                    if (!atom_integer_is(atomA))
-                        E("interpret: Integer primitive's first argument is not an integer (%s).\n", atom_repr(atomA))
+                    ASSERT(atom_integer_is(atomA), "interpret: Integer primitive's first argument is not an integer (%s).\n", atom_repr(atomA))
 
                     Atom *atomB = interpret(recursion_depth+1, atoms, scope, true);
-                    if (!atom_integer_is(atomB))
-                        E("interpret: Integer primitive's second argument is not an integer (%s).\n", atom_repr(atomB))
+                    ASSERT(atom_integer_is(atomB), "interpret: Integer primitive's second argument is not an integer (%s).\n", atom_repr(atomB))
 
                     integer A = ((IntegerAtom *) atomA->atom)->value;
                     integer B = ((IntegerAtom *) atomB->atom)->value;
@@ -194,11 +180,9 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 Atom *scp = atom_scope_new_inherits(function_atom->scope);
                 while (node) {
                     Atom *a = interpret(recursion_depth+1, atoms, scope, true);
-                    if (!atom_is(a))
-                        E("interpret: Found no atom to bind function parameter %s to.\n", atom_repr(node->atom))
+                    ASSERT(atom_is(a), "interpret: Found no atom to bind function parameter %s to.\n", atom_repr(node->atom))
 
-                    if (!atom_scope_push(scp, node->atom, a))
-                        E("interpret: Attempt at rebind.\n")
+                    ASSERT(atom_scope_push(scp, node->atom, a), "interpret: Attempt at rebind.\n")
 
                     node = node->next;
                 }
@@ -273,6 +257,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
         else if (execution_depth != 0)
             E("interpret: Execution depth non-zero when encountering neither function nor higher-order primitive (encountered %s).\n", atom_repr(atom))
 
+        // ASSERT(execution_depth == 0, "Execution depth in an invalid state (%d).", execution_depth)
 
 
 
@@ -280,12 +265,11 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
             char c = ((PrimitiveAtom *) atom->atom)->c;
 
             // execution depth should have been interpreted above
-            if (c == ',' || c == ';')
-                E("interpret: Cannot interpret execution depth modifiers this late.\n")
+            ASSERT(c != ',' && c != ';', "interpret: Cannot interpret execution depth modifiers this late.\n")
 
             // TODO :: extract
             // struct type check
-            else if (c == '#' + '?') {
+            if (c == '#' + '?') {
                 if (!active) {
                     atomlist_pop_front(atoms);
                     interpret(recursion_depth+1, atoms, scope, false);
@@ -293,12 +277,10 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 }
 
                 Atom *type = atomlist_pop_front(atoms);
-                if (!atom_name_is(type))
-                    E("interpret: Struct type check requires NameAtom, got %s.\n", atom_repr(type))
+                ASSERT(atom_name_is(type), "interpret: Struct type check requires NameAtom, got %s.\n", atom_repr(type))
 
                 Atom *struct_ = interpret(recursion_depth+1, atoms, scope, active);
-                if (!atom_struct_is(struct_))
-                    E("interpret: Struct type check requires StructAtom, got %s.\n", atom_repr(struct_))
+                ASSERT(atom_struct_is(struct_), "interpret: Struct type check requires StructAtom, got %s.\n", atom_repr(struct_))
 
                 StructAtom *struct_atom = struct_->atom;
 
@@ -315,17 +297,14 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 }
 
                 Atom *field_name = atomlist_pop_front(atoms);
-                if (!atom_name_is(field_name))
-                    E("interpret: Struct field extraction requires NameAtom, got %s.\n", atom_repr(field_name))
+                ASSERT(atom_name_is(field_name), "interpret: Struct field extraction requires NameAtom, got %s.\n", atom_repr(field_name))
 
                 Atom *struct_ = interpret(recursion_depth+1, atoms, scope, active);
-                if (!atom_struct_is(struct_))
-                    E("interpret: Struct field extraction requires StructAtom, got %s.\n", atom_repr(struct_))
+                ASSERT(atom_struct_is(struct_), "interpret: Struct field extraction requires StructAtom, got %s.\n", atom_repr(struct_))
 
                 StructAtom *struct_atom = struct_->atom;
                 Atom *extracted = atom_scope_unbind(struct_atom->scope, field_name);
-                if (!extracted)
-                    E("interpret: Could not extract field name %s from struct %s.\n", atom_repr(field_name), atom_repr(struct_))
+                ASSERT(extracted, "interpret: Could not extract field name %s from struct %s.\n", atom_repr(field_name), atom_repr(struct_))
 
                 return extracted;
             }
