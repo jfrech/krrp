@@ -19,7 +19,7 @@ static long de_allocations = 0;
 static long nullpointer_frees = 0;
 static long allocated_bytes = 0;
 
-void *mm_malloc(size_t n) {
+void *mm_malloc(const char *msg, size_t n) {
     void *ptr = malloc(n);
 
     if (!ptr)
@@ -28,12 +28,15 @@ void *mm_malloc(size_t n) {
     allocations++;
     allocated_bytes += n;
 
+    //printf("+%04zu %s\n", n, msg);
+
     return ptr;
 }
 
 void mm_free(const char *msg, void *ptr) {
     if (!ptr) { nullpointer_frees++; return; }
 
+    //printf("- %s\n", msg);
     free(ptr);
     de_allocations++;
 }

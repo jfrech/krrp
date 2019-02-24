@@ -8,7 +8,7 @@
 Options *GlobalOptions;
 
 void globaloptions_init() {
-    GlobalOptions = mm_malloc(sizeof *GlobalOptions);
+    GlobalOptions = mm_malloc("globaloptions_init", sizeof *GlobalOptions);
 
     if (!GlobalOptions) {
         error_malloc("globaloptions_init");

@@ -5,7 +5,7 @@
 
 #include <stdlib.h>
 
-void *mm_malloc(size_t n);
+void *mm_malloc(const char *msg, size_t n);
 void mm_free(const char *msg, void *ptr);
 void mm_print_status();
 

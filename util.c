@@ -8,10 +8,7 @@
 extern Options *GlobalOptions;
 
 char *strdup(const char *str) {
-    char *dup = mm_malloc((strlen(str)+1) * sizeof *dup);
-    if (!dup)
-        return error_malloc("strdup"), NULL;
-
+    char *dup = mm_malloc("strdup", (strlen(str)+1) * sizeof *dup);
     strcpy(dup, str);
 
     return dup;
@@ -37,7 +34,7 @@ char *stresc(const char *str) {
     for (int j = 0; str[j]; j++)
         len += escaped_character_length(str[j]);
 
-    char *estr = mm_malloc((len+1) * sizeof *str), *s = estr;
+    char *estr = mm_malloc("stresc", (len+1) * sizeof *str), *s = estr;
     unsigned char c;
 
     for (int j = 0; (c = str[j]); j++) {

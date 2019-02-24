@@ -29,7 +29,7 @@
 int main(int argc, char **argv) {
     globaloptions_init();
     globalatomtable_init();
-    //test_all();
+    test_all();
 
     if (argc != 2)
         return fprintf(stderr, "Please specify a krrp source file.\n"), EXIT_FAILURE;
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
     fseek(f, 0, SEEK_END);
     int source_length = ftell(f);
     fseek(f, 0, SEEK_SET);
-    char *source = mm_malloc(sizeof *source * (source_length + 1));
+    char *source = mm_malloc("main: source", sizeof *source * (source_length + 1));
     fread(source, sizeof *source, source_length, f);
     source[source_length] = '\0';
     fclose(f);
@@ -62,6 +62,7 @@ int main(int argc, char **argv) {
     printf("\n");
 
     atomlist_free(parsed);
+
 
     mm_free("main: source", source);
     memorymanagement_free_all();
