@@ -155,7 +155,7 @@ static int parse_literal(const char *source, int p, AtomList *parsed) {
     literalstr[p-s-1] = '\0';
 
     atomlist_push(parsed, atom_integer_new(atol(literalstr))); // TODO: check if string is valid literal
-    mm_free(literalstr);
+    mm_free("parse_literal", literalstr);
 
     return p;
 }

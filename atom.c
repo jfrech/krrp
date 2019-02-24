@@ -320,7 +320,7 @@ Atom *atom_name_new(char *name) {
         if (atom_name_is(atom)) {
             NameAtom *name_atom = atom->atom;
             if (strcmp(name_atom->name, name) == 0) {
-                mm_free(name);
+                mm_free("atom_name_new", name);
                 return atom;
             }
         }
@@ -759,7 +759,7 @@ Atom *atom_string_new(char *str) {
             StringAtom *string_atom = atom->atom;
             if (strcmp(string_atom->str, str) == 0) {
                 //TODO printf("StringCacheHit \"%s\"\n", str);
-                mm_free(str);
+                mm_free("atom_string_new", str);
                 return atom;
             }
         }

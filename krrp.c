@@ -63,7 +63,9 @@ int main(int argc, char **argv) {
 
     atomlist_free(parsed);
 
-    mm_free(source);
+    mm_free("main: source", source);
     memorymanagement_free_all();
+
+    printf("\n");
     mm_print_status();
 }

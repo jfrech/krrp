@@ -61,5 +61,5 @@ void print_escaped_source(const char *source) {
     printf("=== Source ===\n");
     char *esource = stresc(source);
     printf(".> \"%s\"\n", esource);
-    mm_free(esource);
+    mm_free("print_escaped_source", esource);
 }

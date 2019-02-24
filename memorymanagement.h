@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 void *mm_malloc(size_t n);
-void mm_free(void *ptr);
+void mm_free(const char *msg, void *ptr);
 void mm_print_status();
 
 void mm_free_gat();
