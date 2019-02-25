@@ -1,54 +1,11 @@
 #ifndef ATOM_H
 #define ATOM_H
 
+#include "atomlist.h"
 #include <stdbool.h>
-
 
 // used to declare empty structs
 #define EMPTY char _;
-
-// atom-encapsulated types
-typedef long integer;
-
-// atom types
-typedef enum {
-    atom_type_null,
-    atom_type_nullcondition,
-    atom_type_nullscope,
-    atom_type_Enull,
-
-    atom_type_name,
-    atom_type_integer,
-    atom_type_primitive,
-
-    atom_type_functiondeclaration,
-    atom_type_function,
-    atom_type_scope,
-
-    atom_type_structinitializer,
-    atom_type_struct,
-
-    atom_type_string
-} atom_type;
-
-// atom structs
-typedef struct Atom Atom;
-typedef struct NullAtom NullAtom;
-typedef struct NullConditionAtom NullConditionAtom;
-typedef struct NullScopeAtom NullScopeAtom;
-typedef struct ENullAtom ENullAtom;
-typedef struct NameAtom NameAtom;
-typedef struct IntegerAtom IntegerAtom;
-typedef struct PrimitiveAtom PrimitiveAtom;
-typedef struct FunctionDeclarationAtom FunctionDeclarationAtom;
-typedef struct FunctionAtom FunctionAtom;
-typedef struct ScopeAtom ScopeAtom;
-typedef struct StructInitializerAtom StructInitializerAtom;
-typedef struct StructAtom StructAtom;
-typedef struct StringAtom StringAtom;
-
-typedef struct AtomList AtomList;
-typedef struct AtomListNode AtomListNode;
 
 // global atom table
 void globalatomtable_init();
@@ -138,24 +95,5 @@ Atom *atom_string_fromlong(long n);
 Atom *atom_string_fromchar(char c);
 Atom *atom_string_newfl(const char *str);
 Atom *atom_string_newcopy(const char *str);
-
-// atom list creation and modification
-struct AtomList { AtomListNode *head; };
-struct AtomListNode { Atom *atom; AtomListNode *next; };
-
-AtomList *atomlist_new(AtomListNode *head);
-bool atomlist_is(AtomList *lst);
-
-//TODO
-Atom *atomlist_representation(AtomList *lst);
-
-void atomlist_push(AtomList *lst, Atom *atom);
-void atomlist_push_front(AtomList *lst, Atom *atom);
-Atom *atomlist_pop_front(AtomList *lst);
-int atomlist_len(AtomList *lst);
-bool atomlist_empty(AtomList *lst);
-AtomList *atomlist_copy(AtomList *lst);
-bool atomlist_equal(AtomList *lstA, AtomList *lstB);
-bool atomlist_purely(AtomList *lst, atom_type type);
 
 #endif
