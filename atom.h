@@ -7,11 +7,11 @@
 // used to declare empty structs
 #define EMPTY char _;
 
-// global atom table
+
 void globalatomtable_init();
 void globalatomtable_print();
 
-// atom creation and modification
+
 struct Atom { atom_type type; void *atom; };
 Atom *atom_new(atom_type type, void *atom);
 bool atom_is(Atom *atom);

@@ -14,10 +14,12 @@ extern AtomList* GlobalAtomTableMutable;
 static void memorymanagement_ABORT(const char *msg);
 static void memorymanagement_FATAL_ERROR(const char *msg);
 
-static long allocations = 0;
-static long deallocations = 0;
-static long nullpointer_frees = 0;
-static long allocated_bytes = 0;
+static MemoryManagementDebug dbg = {
+    .allocations = 0,
+    .deallocations = 0,
+    .nullpointer_frees = 0,
+    .allocated_bytes = 0
+};
 
 void *mm_malloc(const char *msg, size_t n) {
     void *ptr = malloc(n);
@@ -25,8 +27,8 @@ void *mm_malloc(const char *msg, size_t n) {
     if (!ptr)
         memorymanagement_ABORT("mm_malloc");
 
-    allocations++;
-    allocated_bytes += n;
+    dbg.allocations++;
+    dbg.allocated_bytes += n;
 
     //printf("+%04zu %s\n", n, msg);
 
@@ -34,21 +36,21 @@ void *mm_malloc(const char *msg, size_t n) {
 }
 
 void mm_free(const char *msg, void *ptr) {
-    if (!ptr) { nullpointer_frees++; return; }
+    if (!ptr) { dbg.nullpointer_frees++; return; }
 
     //printf("- %s\n", msg);
     free(ptr);
-    deallocations++;
+    dbg.deallocations++;
 }
 
 void mm_print_status() {
     printf("* Memory management status *\n");
-    printf("Allocated        : %ld\n", allocations);
-    printf("Deallocated      : %ld\n", deallocations);
-    printf("Alloc Discrepancy: %ld\n", allocations-deallocations);
-    printf("NULL deallocated : %ld\n", nullpointer_frees);
-    printf("Allocated bytes  : %ld (~ %ld Mb)\n", allocated_bytes, allocated_bytes / 1000000);
-    if (allocations == deallocations && nullpointer_frees == 0)
+    printf("Allocated        : %ld\n", dbg.allocations);
+    printf("Deallocated      : %ld\n", dbg.deallocations);
+    printf("Alloc Discrepancy: %ld\n", dbg.allocations-dbg.deallocations);
+    printf("NULL deallocated : %ld\n", dbg.nullpointer_frees);
+    printf("Allocated bytes  : %ld (~ %ld Mb)\n", dbg.allocated_bytes, dbg.allocated_bytes / 1000000);
+    if (dbg.allocations == dbg.deallocations && dbg.nullpointer_frees == 0)
         printf("\nConclusio: No memory management problems detected.\n");
     else
         printf("\nConclusio: PROBLEMATIC MEMORY STATE.\n");

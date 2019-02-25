@@ -23,7 +23,6 @@
 #include "memorymanagement.h"
 
 
-// TODO :: Infinite recursion.
 // TODO: potentially implement AtomList as a doubly linked list.
 // TODO: potentially implement own special color markup
 

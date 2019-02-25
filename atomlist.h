@@ -4,7 +4,7 @@
 #include "typedefs.h"
 #include <stdbool.h>
 
-//TODO
+// TODO
 Atom *atomlist_representation(AtomList *lst);
 
 

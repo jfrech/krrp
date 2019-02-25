@@ -10,11 +10,6 @@ Options *GlobalOptions;
 void globaloptions_init() {
     GlobalOptions = mm_malloc("globaloptions_init", sizeof *GlobalOptions);
 
-    if (!GlobalOptions) {
-        error_malloc("globaloptions_init");
-        return;
-    }
-
     GlobalOptions->color = true;
     GlobalOptions->debug_address = false;
     GlobalOptions->debug_printGlobalAtomTable = !true; // TODO

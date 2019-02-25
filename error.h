@@ -1,31 +1,20 @@
 #ifndef ERROR_H
 #define ERROR_H
 
+#include "color.h"
 #include "options.h"
 extern Options *GlobalOptions;
 
-#define ERR "\033[0;31m"
-#define WRN "\033[0;35m"
-#define CLR "\033[0m"
 
-void error_malloc(const char *err);
-void error_parse(const char *source, int p, const char *err);
-void warning_parse(const char *source, int p, const char *wrn);
+#define _error_msg(emsg, ...) \
+    (GlobalOptions->color ?\
+        printf(ERR emsg CLR " :: " __VA_ARGS__) :\
+        printf(    emsg     " :: " __VA_ARGS__))
 
-#define error(...) (GlobalOptions->color ?\
-    printf(ERR "Error" CLR " :: " __VA_ARGS__) :\
-    printf(    "Error"     " :: " __VA_ARGS__))
+#define error(...)           _error_msg("Error", __VA_ARGS__)
+#define error_atomlist(...)  _error_msg("AtomListError", __VA_ARGS__)
+#define error_atom(...)      _error_msg("AtomError", __VA_ARGS__)
+#define error_interpret(...) _error_msg("InterpretError", __VA_ARGS__)
 
-#define error_atomlist(...) (GlobalOptions->color ?\
-    printf(ERR "AtomListError" CLR " :: " __VA_ARGS__) :\
-    printf(    "AtomListError"     " :: " __VA_ARGS__))
-
-#define error_atom(...) (GlobalOptions->color ?\
-    printf(ERR "AtomError" CLR " :: " __VA_ARGS__) :\
-    printf(    "AtomError"     " :: " __VA_ARGS__))
-
-#define error_interpret(...) (GlobalOptions->color ?\
-    printf(ERR "InterpretError" CLR " :: " __VA_ARGS__) :\
-    printf(    "InterpretError"     " :: " __VA_ARGS__))
 
 #endif
