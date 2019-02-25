@@ -79,6 +79,9 @@ void memorymanagement_free_all() {
 
     if (GlobalAtomTableMutable)
         mm_free_gat(GlobalAtomTableMutable);
+
+    printf("\n");
+    mm_print_status();
 }
 
 

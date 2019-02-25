@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "util.h"
 #include "test.h"
@@ -33,48 +34,110 @@ static const char *atomlist_str(AtomList *lst) {
     return string_atom->str;
 }
 
+// memory-management-aware return
+#define RETURN return memorymanagement_free_all(),
+
+#define MAIN_ERR(...) RETURN fprintf(stderr, __VA_ARGS__), EXIT_FAILURE
+#define PRINT_HELP RETURN printf(\
+    "\nABOUT\n"\
+    "   krrp by Jonathan Frech.\n"\
+    "\n"\
+    "USAGE\n"\
+    "    -h, --help: Print this message.\n"\
+    "    -t, --test: Perform a self-test.\n"\
+    "\n"), EXIT_SUCCESS
 
 int main(int argc, char **argv) {
+    // memory initialization
     globaloptions_init();
     globalatomtable_init();
-    test_all();
 
-    if (argc != 2)
-        return fprintf(stderr, "Please specify a krrp source file.\n"), EXIT_FAILURE;
+    // arguments
+    bool test_mode = false;
+    const char *filename = NULL;
+    {
+        if (argc < 1)
+            MAIN_ERR("Please specify a krrp source file. Use `-h` for help.\n");
 
-    const char *filename = argv[1];
-    FILE *f = fopen(filename, "rb");
-    if (!f)
-        return fprintf(stderr, "Could not open specified file (%s).\n", filename), EXIT_FAILURE;
+        bool interpret_arguments = true;
 
-    fseek(f, 0, SEEK_END);
-    int source_length = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    char *source = mm_malloc("main: source", sizeof *source * (source_length + 1));
-    fread(source, sizeof *source, source_length, f);
-    source[source_length] = '\0';
-    fclose(f);
+        for (int j = 1; j < argc; j++) {
+            const char *arg = argv[j], *_arg = arg;
+
+            if (interpret_arguments && arg[0] == '-') {
+                if (arg[1] == '\0')
+                    MAIN_ERR("Unknown argument `%s`.\n", arg);
+
+                if (arg[1] == '-') {
+                    if (arg[2] == '\0')
+                        interpret_arguments = false;
+                    else if (strcmp(arg, "--help") == 0)
+                        PRINT_HELP;
+                    else if (strcmp(arg, "--test") == 0)
+                        test_mode = true;
+                    else
+                        MAIN_ERR("Unknown argument `%s`.\n", arg);
+                }
+                else {
+                    for (char cflg; (cflg = *++_arg); )
+                        if (cflg == 'h')
+                            PRINT_HELP;
+                        else if (cflg == 't')
+                            test_mode = true;
+                        else
+                            MAIN_ERR("Unknown character flag `-%c` in argument `%s`.\n", cflg, arg);
+                }
+            }
+            else {
+                if (filename == NULL)
+                    filename = arg;
+                else
+                    MAIN_ERR("Cannot interpret two source files (`%s` and `%s`).\n", filename, arg);
+            }
+        }
+    }
+
+    // testing
+    if (test_mode) {
+        printf("Testing ...\n");
+        test_all();
+        RETURN EXIT_SUCCESS;
+    }
+
+    // interpreting
+    {
+        FILE *f = fopen(filename, "rb");
+        if (!f)
+            MAIN_ERR("Could not open krrp source file `%s`.\n", filename);
+
+        fseek(f, 0, SEEK_END);
+        int source_length = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        char *source = mm_malloc("main: source", sizeof *source * (source_length + 1));
+        fread(source, sizeof *source, source_length, f);
+        source[source_length] = '\0';
+        fclose(f);
 
 
-    print_escaped_source(source);
+        print_escaped_source(source);
 
-    printf("\n=== Parsing ===\n");
-    AtomList *parsed = parse(source);
-    printf(".> %s\n", atomlist_str(parsed));
-
-
-    printf("\n=== Interpreting ===\n");
-    Atom *scope = main_scope();
-    while (!atomlist_empty(parsed))
-        printf(".> %s\n", atom_repr(interpret(0, parsed, scope, true)));
-    printf("\n");
-
-    atomlist_free(parsed);
+        printf("\n=== Parsing ===\n");
+        AtomList *parsed = parse(source);
+        printf(".> %s\n", atomlist_str(parsed));
 
 
-    mm_free("main: source", source);
-    memorymanagement_free_all();
+        printf("\n=== Interpreting ===\n");
+        Atom *scope = main_scope();
+        while (!atomlist_empty(parsed))
+            printf(".> %s\n", atom_repr(interpret(0, parsed, scope, true)));
+        printf("\n");
 
-    printf("\n");
-    mm_print_status();
+        atomlist_free(parsed);
+
+
+        mm_free("main: source", source);
+    }
+
+    // memory destruction
+    RETURN EXIT_SUCCESS;
 }
