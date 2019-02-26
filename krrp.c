@@ -24,8 +24,9 @@
 #include "memorymanagement.h"
 
 
-// TODO: potentially implement AtomList as a doubly linked list.
-// TODO: potentially implement own special color markup
+// TODO: Potentially make an AtomList into its own full atom.
+// TODO: Potentially implement AtomList as a doubly linked list.
+// TODO: Potentially implement own special color markup.
 
 
 // TODO

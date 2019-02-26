@@ -1,0 +1,17 @@
+!Z#Z. !S#Sp.
+
+~ Built-in -> Peano
+![->]^n:?nS@-n1Z.
+
+~ Built-in <- Peano
+![<-]^N:?#?ZN0+1@#!pN.
+
+![p+]^nm:?#?Zn m S     @#!pnm.
+![p*]^nm:?#?Zn Z [p+]m @#!pnm.
+
+!_^'>:^nm:?#?Zn 'm >m@#!pnm..
+![p+']_^m:m.^mp:Sp.
+![p*']_^m:Z.^mp:[p+']mp.
+
+[<-][p*][->]8[->]9
+[<-][p*'][->]8[->]9
