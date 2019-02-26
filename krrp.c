@@ -37,7 +37,7 @@ static const char *atomlist_str(AtomList *lst) {
 // memory-management-aware return
 #define RETURN return memorymanagement_free_all(),
 
-#define MAIN_ERR(...) RETURN fprintf(stderr, __VA_ARGS__), EXIT_FAILURE
+#define MAIN_ERR(...) return fprintf(stderr, __VA_ARGS__), memorymanagement_free_all(), EXIT_FAILURE
 #define PRINT_HELP RETURN printf(\
     "\nABOUT\n"\
     "   krrp by Jonathan Frech.\n"\
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
 
     // arguments
     bool test_mode = false;
-    const char *filename = NULL;
+    AtomList *al_sources = atomlist_new(NULL);
     {
         if (argc < 1)
             MAIN_ERR("Please specify a krrp source file. Use `-h` for help.\n");
@@ -89,10 +89,11 @@ int main(int argc, char **argv) {
                 }
             }
             else {
-                if (filename == NULL)
-                    filename = arg;
-                else
-                    MAIN_ERR("Cannot interpret two source files (`%s` and `%s`).\n", filename, arg);
+                atomlist_push(al_sources, atom_string_newfl(arg));
+                //if (filename == NULL)
+                //    filename = arg;
+                //else
+                //    MAIN_ERR("Cannot interpret two source files (`%s` and `%s`).\n", filename, arg);
             }
         }
     }
@@ -101,42 +102,50 @@ int main(int argc, char **argv) {
     if (test_mode) {
         printf("Testing ...\n");
         test_all();
-        RETURN EXIT_SUCCESS;
     }
 
     // interpreting
-    {
-        FILE *f = fopen(filename, "rb");
-        if (!f)
-            MAIN_ERR("Could not open krrp source file `%s`.\n", filename);
+    else {
+        while (!atomlist_empty(al_sources)) {
+            Atom *a_source = atomlist_pop_front(al_sources);
+            if (!atom_string_is(a_source))
+                MAIN_ERR("Invalid state.");
+            const char *filename = ((StringAtom *) a_source->atom)->str;
 
-        fseek(f, 0, SEEK_END);
-        int source_length = ftell(f);
-        fseek(f, 0, SEEK_SET);
-        char *source = mm_malloc("main: source", sizeof *source * (source_length + 1));
-        fread(source, sizeof *source, source_length, f);
-        source[source_length] = '\0';
-        fclose(f);
-
-
-        print_escaped_source(source);
-
-        printf("\n=== Parsing ===\n");
-        AtomList *parsed = parse(source);
-        printf(".> %s\n", atomlist_str(parsed));
-
-
-        printf("\n=== Interpreting ===\n");
-        Atom *scope = main_scope();
-        while (!atomlist_empty(parsed))
-            printf(".> %s\n", atom_repr(interpret(0, parsed, scope, true)));
-        printf("\n");
-
-        atomlist_free(parsed);
+            printf("* Reading file `%s` ...\n", filename);
+            FILE *f = fopen(filename, "rb");
+            if (!f)
+                MAIN_ERR("Could not open krrp source file ??`%s`.\n", filename);
+            fseek(f, 0, SEEK_END);
+            int source_length = ftell(f);
+            fseek(f, 0, SEEK_SET);
+            // TODO :: On mm_malloc error, the file is not closed.
+            char *source = mm_malloc("main: source", sizeof *source * (source_length + 1));
+            fread(source, sizeof *source, source_length, f);
+            source[source_length] = '\0';
+            fclose(f);
 
 
-        mm_free("main: source", source);
+            print_escaped_source(source);
+
+            printf("\n=== Parsing ===\n");
+            AtomList *parsed = parse(source);
+            printf(".> %s\n", atomlist_str(parsed));
+
+            printf("\n=== Interpreting ===\n");
+            Atom *scope = main_scope();
+            while (!atomlist_empty(parsed))
+                printf(".> %s\n", atom_repr(interpret(0, parsed, scope, true)));
+            printf("\n");
+
+            atomlist_free(parsed); // TODO :: This list also never gets freed upon an error.
+
+
+            mm_free("main: source", source);
+        }
     }
+
+    atomlist_free(al_sources); // TODO :: This list also never gets freed upon an error.
 
     // memory destruction
     RETURN EXIT_SUCCESS;
