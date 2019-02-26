@@ -8,6 +8,11 @@
              16th, 17th, 18th, 20th, 21st of November, 4th, 9th, 11th of December 2018, 23rd of February 2019
  */
 
+/*
+    ![factorial]^n:?n*n@-n11.
+    ![choose]^nk:!f;[factorial]/fn*fkf-nk.
+*/
+
 #include <stdio.h>
 #include "atom.h"
 #include "parse.h"

@@ -11,13 +11,13 @@
 
 extern Options *GlobalOptions;
 
-#define E(...) return error_interpret(__VA_ARGS__), atom_Enull_new();
-#define ASSERT(cnd, ...) { if (!(cnd)) E(__VA_ARGS__) }
+#define ASSERT(cnd, ...) { if (!(cnd)) return error_interpret(__VA_ARGS__), atom_Enull_new(); }
 
 
 Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active) {
     ASSERT(GlobalOptions, "interpret: Cannot access global options.\n")
-    ASSERT(recursion_depth < GlobalOptions->maximum_interpretation_recursion_depth, "interpret: Maximum interpretation iterations reached.\n")
+    ASSERT(recursion_depth < GlobalOptions->maximum_interpretation_recursion_depth,
+        "interpret: Maximum interpretation iterations reached.\n")
     ASSERT(atomlist_is(atoms), "interpret: Given invalid atoms AtomList.\n");
     ASSERT(atom_scope_is(scope), "interpret: Given invalid scope ScopeAtom.\n");
 
@@ -43,14 +43,13 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
 
 
         if (atom_equal(atom, atom_primitive_new(','))) {
-            execution_depth++; continue;
+            execution_depth++;
+            continue;
         }
         else if (atom_equal(atom, atom_primitive_new(';'))) {
             execution_depth--;
             continue;
         }
-        else if (execution_depth < 0)
-            E("interpret: Negative execution depth (%d).\n", execution_depth)
 
 
         ASSERT(execution_depth >= 0, "Execution depth in an invalid state (%d).", execution_depth)
@@ -103,10 +102,10 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 }
 
                 else if (strcmp(p, "|") == 0 || strcmp(p, "&") == 0)
-                    E("TODO :: Functionality for `|` and `&` is not yet implemented.\n")
+                    ASSERT(false, "TODO :: Functionality for `|` and `&` is not yet implemented.\n")
 
                 else
-                    E("interpret: Unknown primitive function.\n")
+                    ASSERT(false, "interpret: Unknown primitive function.\n")
 
                 continue;
             }
@@ -124,6 +123,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
 
 
             ASSERT(active, "interpret: Invalid inactiveness.\n")
+
 
             // boxed primitive function
             if (p) {
@@ -161,11 +161,11 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                             MK('<', <) MK('=', ==) MK('>', >)
                             #undef MK
 
-                            default: E("interpret: Unknown primitive `%s`.\n", atom_repr(atom))
+                            default: ASSERT(false, "interpret: Unknown primitive `%s`.\n", atom_repr(atom))
                         }
 
                     else
-                        E("interpret: Unknown primitive `%s`.\n", atom_repr(atom))
+                        ASSERT(false, "interpret: Unknown primitive `%s`.\n", atom_repr(atom))
                 }
             }
 
@@ -176,8 +176,8 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 Atom *scp = atom_scope_new_inherits(function_atom->scope);
                 while (node) {
                     Atom *a = interpret(recursion_depth+1, atoms, scope, true);
-                    ASSERT(atom_is(a), "interpret: Found no atom to bind function parameter %s to.\n", atom_repr(node->atom))
 
+                    ASSERT(atom_is(a), "interpret: Found no atom to bind function parameter %s to.\n", atom_repr(node->atom))
                     ASSERT(atom_scope_push(scp, node->atom, a), "interpret: Attempt at rebind.\n")
 
                     node = node->next;
@@ -244,13 +244,12 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
             atom_scope_push(scp, atom_name_new(strdup("@")), f);
             atom_scope_setflag_isselfref(scp, true);
 
-            if (execution_depth > 0)
-                atomlist_push_front(atoms, f);
-            else if (execution_depth == 0)
-                return active ? f : atom_nullcondition_new();
-            else
-                E("interpret: Execution depth negative when encountering function declaration.\n")
+            ASSERT(execution_depth >= 0, "interpret: Execution depth negative when encountering function declaration.\n")
 
+            if (execution_depth == 0)
+                return active ? f : atom_nullcondition_new();
+
+            atomlist_push_front(atoms, f);
             continue;
         }
 
@@ -259,7 +258,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
 
 
         if (atom_primitive_is(atom)) {
-            char c = ((PrimitiveAtom *) atom->atom)->c;
+            const char c = ((PrimitiveAtom *) atom->atom)->c;
 
             // execution depth should have been interpreted above
             ASSERT(c != ',' && c != ';', "interpret: Cannot interpret execution depth modifiers this late.\n")
@@ -307,22 +306,23 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
             }
 
             else
-                E("interpret: Unknown primitive %s.\n", atom_repr(atom))
+                ASSERT(false, "interpret: Unknown primitive %s.\n", atom_repr(atom))
 
             continue;
         }
 
-        if (atom_integer_is(atom) || atom_structinitializer_is(atom) || atom_struct_is(atom))
+        if (atom_integer_is(atom)) {
+            ASSERT(execution_depth == 0, "Integer used with non-zero execution depth.\n")
+            return atom;
+        }
+
+        if (atom_structinitializer_is(atom) || atom_struct_is(atom))
             return active ? atom : atom_nullcondition_new();
 
-
-        E("interpret: Invalid state.\n")
+        ASSERT(false, "interpret: Invalid state.\n")
     }
 
-    if (!active)
-        E("Fell inactively through.\n")
-
-    E("Fell through.\n")
+    ASSERT(false, "Fell through (active = %s).\n", active ? "true" : "false")
 }
 
 
