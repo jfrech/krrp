@@ -10,7 +10,7 @@
 // internal parse function (recursively called in each function declaration)
 static int _parse(const char *source, int p, AtomList *parsed, parse_state state);
 
-/* TODO: fancify
+/* TODO: fancify the grammar
 
     <program> ::= <statement>*[\0]
     <statement> ::= <name>
@@ -33,11 +33,6 @@ static int _parse(const char *source, int p, AtomList *parsed, parse_state state
     [...]: character class
     [^...]: complement character class
 */
-
-
-
-
-
 
 
 

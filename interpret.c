@@ -12,10 +12,8 @@
 extern Options *GlobalOptions;
 
 #define E(...) return error_interpret(__VA_ARGS__), atom_Enull_new();
+#define ASSERT(cnd, ...) { if (!(cnd)) E(__VA_ARGS__) }
 
-#define ASSERT(cnd, ...) \
-    { if (!(cnd)) \
-        E(__VA_ARGS__) }
 
 Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active) {
     ASSERT(GlobalOptions, "interpret: Cannot access global options.\n")
@@ -24,7 +22,6 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
     ASSERT(atom_scope_is(scope), "interpret: Given invalid scope ScopeAtom.\n");
 
     int execution_depth = 0;
-
     while (atoms->head) {
         Atom *atom = atomlist_pop_front(atoms);
 
@@ -46,8 +43,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
 
 
         if (atom_equal(atom, atom_primitive_new(','))) {
-            execution_depth++;
-            continue;
+            execution_depth++; continue;
         }
         else if (atom_equal(atom, atom_primitive_new(';'))) {
             execution_depth--;
@@ -57,7 +53,6 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
             E("interpret: Negative execution depth (%d).\n", execution_depth)
 
 
-        /* execution_depth >= 0 guaranteed */
         ASSERT(execution_depth >= 0, "Execution depth in an invalid state (%d).", execution_depth)
 
 
@@ -71,7 +66,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
             FunctionAtom *function_atom = atom->atom;
             char *p = function_atom->primitive;
 
-            // primitive function
+            // extended primitive function
             if (p && (strcmp(p, "!") == 0 || strcmp(p, "?") == 0 || strcmp(p, "|") == 0 || strcmp(p, "&") == 0)) {
                 if (strcmp(p, "!") == 0) {
                     Atom *name = atomlist_pop_front(atoms);
@@ -80,7 +75,6 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                     Atom *bind = interpret(recursion_depth+1, atoms, scope, active);
                     ASSERT(atom_is(bind), "interpret: Bind needs Atom, got %s.\n", atom_repr(bind))
 
-                    // TODO :: possibly `active &&` in this condition
                     ASSERT(atom_scope_push(scope, name, bind), "interpret: Could not bind %s.\n", atom_repr(name))
                 }
 
@@ -109,16 +103,18 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 }
 
                 else if (strcmp(p, "|") == 0 || strcmp(p, "&") == 0)
-                    E("TODO |&\n")
-                else
-                    E("?!?!?\n")
+                    E("TODO :: Functionality for `|` and `&` is not yet implemented.\n")
 
-                continue; // TODO :: lexical extent ... breaks `if` chain
+                else
+                    E("interpret: Unknown primitive function.\n")
+
+                continue;
             }
 
 
-            // PROBLEM TODO :: names shall not be evaluated (`!`, `#!`, ...)
-            // lexical extent of inactive evaluation known, swallow arguments and return (as the function's return is not called (higher-order, could else be function)
+            // lexical extent of inactive evaluation known, swallow arguments
+            // and return (as the function's return is not called
+            // (higher-order, could else be function)
             if (execution_depth == 0 && !active) {
                 for (int j = 0; j < function_atom->arity; j++)
                     interpret(recursion_depth+1, atoms, atom_scope_new_fake(scope), false);
@@ -127,49 +123,49 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
             }
 
 
-            /* active == true guaranteed */
+            ASSERT(active, "interpret: Invalid inactiveness.\n")
 
-
-            // TODO
+            // boxed primitive function
             if (p) {
                 ASSERT(execution_depth == 0, "interpret: First-order primitive called with remaining execution depth (%d).\n", execution_depth)
 
+                // atom equality
                 if (strcmp(p, "=") == 0) {
                     Atom *atomA = interpret(recursion_depth+1, atoms, scope, true);
-                    ASSERT(atom_is(atomA), "interpret: = expected atom as first argument (%s).\n", atom_repr(atomA))
-
                     Atom *atomB = interpret(recursion_depth+1, atoms, scope, true);
-                    ASSERT(atom_is(atomB), "interpret: = expected atom as second argument (%s).\n", atom_repr(atomA))
+
+                    ASSERT(atom_is(atomA), "interpret: `=` expected atom as first argument (got `%s`).\n", atom_repr(atomA))
+                    ASSERT(atom_is(atomB), "interpret: `=` expected atom as second argument (got `%s`).\n", atom_repr(atomA))
 
                     return atom_integer_new(atom_equal(atomA, atomB));
                 }
 
-
-                // TODO
+                // integer operations
                 else {
                     Atom *atomA = interpret(recursion_depth+1, atoms, scope, true);
-                    ASSERT(atom_integer_is(atomA), "interpret: Integer primitive's first argument is not an integer (%s).\n", atom_repr(atomA))
-
                     Atom *atomB = interpret(recursion_depth+1, atoms, scope, true);
-                    ASSERT(atom_integer_is(atomB), "interpret: Integer primitive's second argument is not an integer (%s).\n", atom_repr(atomB))
+
+                    ASSERT(atom_integer_is(atomA), "interpret: Integer primitive's first argument is not an integer (got `%s`).\n", atom_repr(atomA))
+                    ASSERT(atom_integer_is(atomB), "interpret: Integer primitive's second argument is not an integer (got `%s`).\n", atom_repr(atomB))
 
                     integer A = ((IntegerAtom *) atomA->atom)->value;
                     integer B = ((IntegerAtom *) atomB->atom)->value;
 
                     if (B == 0 && (strcmp(p, "%") == 0 || strcmp(p, "/") == 0))
-                        return error_interpret("interpret: Division by zero.\n"), atom_null_new();
+                        return error_interpret("interpret: Division by zero.\n"), atom_integer_new(0);
 
-                    if      (strcmp(p, "%") == 0) return atom_integer_new(A % B);
-                    else if (strcmp(p, "*") == 0) return atom_integer_new(A * B);
-                    else if (strcmp(p, "+") == 0) return atom_integer_new(A + B);
-                    else if (strcmp(p, "-") == 0) return atom_integer_new(A - B);
-                    else if (strcmp(p, "/") == 0) return atom_integer_new(A / B);
-                    else if (strcmp(p, "<") == 0) return atom_integer_new(A < B);
-                    else if (strcmp(p, "=") == 0) return atom_integer_new(A ==B);
-                    else if (strcmp(p, ">") == 0) return atom_integer_new(A > B);
+                    if (p[0] != '\0' && p[1] == '\0')
+                        switch (p[0]) {
+                            #define MK(c, op) case c: return atom_integer_new(A op B);
+                            MK('%', %) MK('*', *) MK('+', +) MK('-', -) MK('/', /)
+                            MK('<', <) MK('=', ==) MK('>', >)
+                            #undef MK
+
+                            default: E("interpret: Unknown primitive `%s`.\n", atom_repr(atom))
+                        }
 
                     else
-                        E("interpret: Unknown primitive (\"%s\").\n", atom_repr(atom))
+                        E("interpret: Unknown primitive `%s`.\n", atom_repr(atom))
                 }
             }
 
@@ -196,17 +192,19 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 else
                     return active ? ret : atom_nullcondition_new();
             }
+
+            continue;
         }
 
-        // TODO :: implement as ordinary function
+
         else if (atom_structinitializer_is(atom)) {
             if (execution_depth == 0)
                 return active ? atom : atom_nullcondition_new();
 
             execution_depth--;
             StructInitializerAtom *structinitializer_atom = atom->atom;
-            if (execution_depth != 0)
-                return error_interpret("???"), atom_null_new();
+
+            ASSERT(execution_depth == 0, "Unexpected execution depth in struct initializer (%d).\n", execution_depth)
 
             if (execution_depth == 0 && !active) {
                 for (int j = 0; j < atomlist_len(structinitializer_atom->fields); j++)
@@ -225,13 +223,12 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 node = node->next;
             }
 
-            struct_scope = atom_scope_freeze(struct_scope);
-            return atom_struct_new(type, struct_scope);
+            return atom_struct_new(type, atom_scope_freeze(struct_scope));
         }
+
 
         // set up lexical scoping and turn function declaration into function
         else if (atom_functiondeclaration_is(atom)) {
-            // TODO :: assure functionality
             FunctionDeclarationAtom *fd = atom->atom;
             Atom *scp = atom_scope_new_inherits(scope);
             Atom *f_scp = atom_scope_new_inherits(scp);
@@ -240,8 +237,10 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 atomlist_copy(fd->parameters),
                 atomlist_copy(fd->body),
                 f_scp,
-                NULL
+                NULL // not primitive
             );
+
+            // self-referring name
             atom_scope_push(scp, atom_name_new(strdup("@")), f);
             atom_scope_setflag_isselfref(scp, true);
 
@@ -251,17 +250,15 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 return active ? f : atom_nullcondition_new();
             else
                 E("interpret: Execution depth negative when encountering function declaration.\n")
+
+            continue;
         }
 
-        /*** Guarantee: execution_depth == 0 ***/
-        else if (execution_depth != 0)
-            E("interpret: Execution depth non-zero when encountering neither function nor higher-order primitive (encountered %s).\n", atom_repr(atom))
 
-        // ASSERT(execution_depth == 0, "Execution depth in an invalid state (%d).", execution_depth)
+        ASSERT(execution_depth == 0, "interpret: Execution depth non-zero when encountering neither function nor higher-order primitive (encountered %s).\n", atom_repr(atom))
 
 
-
-        else if (atom_primitive_is(atom)) {
+        if (atom_primitive_is(atom)) {
             char c = ((PrimitiveAtom *) atom->atom)->c;
 
             // execution depth should have been interpreted above
@@ -311,13 +308,15 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
 
             else
                 E("interpret: Unknown primitive %s.\n", atom_repr(atom))
+
+            continue;
         }
 
-        else if (atom_integer_is(atom) || atom_structinitializer_is(atom) || atom_struct_is(atom))
+        if (atom_integer_is(atom) || atom_structinitializer_is(atom) || atom_struct_is(atom))
             return active ? atom : atom_nullcondition_new();
 
-        else
-            E("interpret: ???\n")
+
+        E("interpret: Invalid state.\n")
     }
 
     if (!active)
@@ -326,7 +325,8 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
     E("Fell through.\n")
 }
 
-// generate the main scope (every scope is descendant of this scope or the null scope itself)
+
+// generate the main scope (every scope is a descendant of this scope or the null scope itself)
 Atom *main_scope() {
     Atom *scope = atom_scope_new_empty();
 

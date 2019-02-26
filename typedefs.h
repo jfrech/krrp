@@ -6,6 +6,7 @@
 typedef long integer;
 
 
+// atoms
 typedef struct Atom Atom;
 typedef struct NullAtom NullAtom;
 typedef struct NullConditionAtom NullConditionAtom;
@@ -21,6 +22,7 @@ typedef struct StructInitializerAtom StructInitializerAtom;
 typedef struct StructAtom StructAtom;
 typedef struct StringAtom StringAtom;
 
+// atom list
 typedef struct AtomList AtomList;
 typedef struct AtomListNode AtomListNode;
 
