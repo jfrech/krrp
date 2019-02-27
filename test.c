@@ -3,6 +3,7 @@
 #include "parse.h"
 #include "interpret.h"
 #include "memorymanagement.h"
+#include "error.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -15,12 +16,7 @@ void test(const char *source, Atom *expected) {
     Atom *computed = interpret(0, parsed, scope, true);
 
     if (!atom_equal(computed, expected))
-        printf("[FAIL] \"%s\"\n   :: '%s' differs from expected '%s'.\n", esource, atom_repr(computed), atom_repr(expected));
-    else {
-        /*printf("[pass] \"%s\"\n", esource);
-        printf(".> %s\n", atom_repr(computed));
-        // */
-    }
+        error("[FAIL] \"%s\"\n   :: '%s' differs from expected '%s'.\n", esource, atom_repr(computed), atom_repr(expected));
 
     atomlist_free(parsed);
     mm_free("test", esource);
@@ -94,8 +90,4 @@ void test_all() {
     test("![and]^pq:?p?q100. !f^c:^tf:?ctf.. ![decision0]f0 ![decision1]f1   [and] =[decision0]488 =[decision1]484", T);
     test("~An implementation of Peano naturals.\n !Z#Z.!S#Sp. ![->]^n:?nS@-n1Z. ![<-]^n:?#?Zn0+1@#!pn. ~TEST OVERLOADING HERE\n ![p+]^nm:?#?ZnmS@#!pnm. =[<-][p+][->]3[->]8$11.", T);
     test("![factorial]^n:?n*n@-n11. ![choose]^nk:!f;[factorial]/fn*fkf-nk. [choose]83", atom_integer_new(56));
-
-    //printf("\n");
-
-    // other char *str = stresc(source);printf("Source code \"%s\"\n", str);free(str);printf(".> %s\n", str=stresc("Hello\\worl\077d.\x37Ho\xafw?\n\thj\xfekl"));free(str);
 }

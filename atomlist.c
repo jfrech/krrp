@@ -9,7 +9,7 @@ static AtomListNode *atomlistnode_new(Atom *atom, AtomListNode *next);
 
 Atom *atomlist_representation(AtomList *lst) {
     if (!atomlist_is(lst))
-        return error_atomlist("atomlist_representation: Expected AtomList.\n"), NULL;
+        return error("atomlist :: atomlist_representation: Expected AtomList.\n"), NULL;
 
     if (!lst->head)
         return atom_string_newfl("[]");
@@ -38,14 +38,14 @@ AtomList *atomlist_new(AtomListNode *head) {
 
 bool atomlist_is(AtomList *lst) {
     if (!lst)
-        return error_atomlist("atomlist_is: Malformed atom.\n"), false;
+        return error("atomlist :: atomlist_is: Malformed atom.\n"), false;
 
     return true;
 }
 
 static AtomListNode *atomlistnode_new(Atom *atom, AtomListNode *next) {
     if (!atom_is(atom))
-        return error_atomlist("atomlistnode_new: Given invalid atom.\n"), NULL;
+        return error("atomlist :: atomlistnode_new: Given invalid atom.\n"), NULL;
 
     AtomListNode *node = mm_malloc("atomlistnode_new", sizeof *node);
     node->atom = atom;
@@ -78,7 +78,7 @@ Atom *atomlist_pop_front(AtomList *lst) {
         return NULL;
 
     if (!lst->head)
-        return error_atomlist("atomlist_pop_front: List length is zero.\n"), NULL;
+        return error("atomlist :: atomlist_pop_front: List length is zero.\n"), NULL;
 
     AtomListNode *node = lst->head;
     lst->head = node->next;
@@ -171,5 +171,5 @@ void atomlist_remove_by_pointer(AtomList *lst, Atom *atom) {
         node = &(*node)->next;
     }
 
-    error_atomlist("atomlist_remove_by_pointer: Did not find %s.\n", atom_repr(atom));
+    error("atomlist :: atomlist_remove_by_pointer: Did not find %s.\n", atom_repr(atom));
 }

@@ -7,11 +7,12 @@
 #include "error.h"
 #include "interpret.h"
 #include "util.h"
+#include "options.h"
 #include "memorymanagement.h"
 
 extern Options *GlobalOptions;
 
-#define ASSERT(cnd, ...) { if (!(cnd)) return error_interpret(__VA_ARGS__), atom_Enull_new(); }
+#define ASSERT(cnd, ...) { if (!(cnd)) return error("interpret :: " __VA_ARGS__), atom_Enull_new(); }
 
 
 Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active) {
@@ -107,7 +108,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                     integer B = ((IntegerAtom *) atomB->atom)->value;
 
                     if (B == 0 && (strcmp(p, "%") == 0 || strcmp(p, "/") == 0))
-                        return error_interpret("interpret: Division by zero.\n"), atom_integer_new(0);
+                        return error("interpret :: Division by zero.\n"), atom_integer_new(0);
 
                     if (p[0] != '\0' && p[1] == '\0')
                         switch (p[0]) {

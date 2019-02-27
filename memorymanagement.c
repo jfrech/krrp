@@ -5,6 +5,7 @@
 
 #include "atom.h"
 #include "options.h"
+#include "error.h"
 
 
 extern Options* GlobalOptions;
@@ -30,30 +31,27 @@ void *mm_malloc(const char *msg, size_t n) {
     dbg.allocations++;
     dbg.allocated_bytes += n;
 
-    //printf("+%04zu %s\n", n, msg);
-
     return ptr;
 }
 
 void mm_free(const char *msg, void *ptr) {
     if (!ptr) { dbg.nullpointer_frees++; return; }
 
-    //printf("- %s\n", msg);
     free(ptr);
     dbg.deallocations++;
 }
 
 void mm_print_status() {
-    printf("* Memory management status *\n");
-    printf("Allocated        : %ld\n", dbg.allocations);
-    printf("Deallocated      : %ld\n", dbg.deallocations);
-    printf("Alloc Discrepancy: %ld\n", dbg.allocations-dbg.deallocations);
-    printf("NULL deallocated : %ld\n", dbg.nullpointer_frees);
-    printf("Allocated bytes  : %ld (~ %ld Mb)\n", dbg.allocated_bytes, dbg.allocated_bytes / 1000000);
+    info("* Memory management status *\n");
+    info("Allocated        : %ld\n", dbg.allocations);
+    info("Deallocated      : %ld\n", dbg.deallocations);
+    info("Alloc Discrepancy: %ld\n", dbg.allocations-dbg.deallocations);
+    info("NULL deallocated : %ld\n", dbg.nullpointer_frees);
+    info("Allocated bytes  : %ld (~ %ld Mb)\n", dbg.allocated_bytes, dbg.allocated_bytes / 1000000);
     if (dbg.allocations == dbg.deallocations && dbg.nullpointer_frees == 0)
-        printf("\nConclusio: No memory management problems detected.\n");
+        info("Conclusio: No memory management problems detected.\n");
     else
-        printf("\nConclusio: PROBLEMATIC MEMORY STATE.\n");
+        error("Conclusio: PROBLEMATIC MEMORY STATE.\n");
 }
 
 static void memorymanagement_ABORT(const char *msg) {
@@ -64,7 +62,7 @@ static void memorymanagement_ABORT(const char *msg) {
 }
 
 static void memorymanagement_FATAL_ERROR(const char *msg) {
-    fprintf(stderr, "A fatal memory error has occurred.\n    %s\n", msg);
+    error("A *FATAL* memory error has occurred.\n    %s\n", msg);
 
     exit(EXIT_FAILURE);
 }
@@ -80,13 +78,12 @@ void memorymanagement_free_all() {
     if (GlobalAtomTableMutable)
         mm_free_gat(GlobalAtomTableMutable);
 
-    printf("\n");
     mm_print_status();
 }
 
 
 void mm_free_gat(AtomList *gat) {
-    printf("Freeing %d ...\n", atomlist_len(gat));
+    info("Freeing %d ...\n", atomlist_len(gat));
 
     AtomListNode *node = gat->head;
     while (node) {

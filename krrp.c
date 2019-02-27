@@ -18,6 +18,7 @@
 #include "parse.h"
 #include "interpret.h"
 #include "options.h"
+#include "error.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -43,8 +44,8 @@ static const char *atomlist_str(AtomList *lst) {
 // memory-management-aware return
 #define RETURN return memorymanagement_free_all(),
 
-#define MAIN_ERR(...) return fprintf(stderr, __VA_ARGS__), memorymanagement_free_all(), EXIT_FAILURE
-#define PRINT_HELP RETURN printf(\
+#define MAIN_ERR(...) return error(__VA_ARGS__), memorymanagement_free_all(), EXIT_FAILURE
+#define PRINT_HELP RETURN error(\
     "\nABOUT\n"\
     "   krrp by Jonathan Frech.\n"\
     "\n"\
@@ -106,7 +107,7 @@ int main(int argc, char **argv) {
 
     // testing
     if (test_mode) {
-        printf("Testing ...\n");
+        info("Testing ...\n");
         test_all();
     }
 
@@ -118,7 +119,7 @@ int main(int argc, char **argv) {
                 MAIN_ERR("Invalid state.");
             const char *filename = ((StringAtom *) a_source->atom)->str;
 
-            printf("* Reading file `%s` ...\n", filename);
+            info("* Reading file `%s` ...\n", filename);
             FILE *f = fopen(filename, "rb");
             if (!f)
                 MAIN_ERR("Could not open krrp source file ??`%s`.\n", filename);
@@ -134,15 +135,14 @@ int main(int argc, char **argv) {
 
             print_escaped_source(source);
 
-            printf("\n=== Parsing ===\n");
+            info("=== Parsing ===\n");
             AtomList *parsed = parse(source);
-            printf(".> %s\n", atomlist_str(parsed));
+            info(".> %s\n", atomlist_str(parsed));
 
-            printf("\n=== Interpreting ===\n");
+            info("=== Interpreting ===\n");
             Atom *scope = main_scope();
             while (!atomlist_empty(parsed))
-                printf(".> %s\n", atom_repr(interpret(0, parsed, scope, true)));
-            printf("\n");
+                printf("%s\n", atom_repr(interpret(0, parsed, scope, true)));
 
             atomlist_free(parsed); // TODO :: This list also never gets freed upon an error.
 

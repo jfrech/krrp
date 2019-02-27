@@ -36,7 +36,7 @@ static int _parse(const char *source, int p, AtomList *parsed, parse_state state
 
 
 
-
+// TODO :: `fprintf`
 static void print_escaped(const char *source, int p) {
     fprintf(stderr, "\n    ");
 
@@ -70,18 +70,18 @@ static void print_escaped(const char *source, int p) {
 
 static void error_parse(const char *source, int p, const char *err) {
     if (p < 0) {
-        fprintf(stderr, "ParseError :: %s\n", err);
+        error("ParseError :: %s\n", err);
         return;
     }
 
     print_escaped(source, p);
 
-    fprintf(stderr, "ParseError at byte %d :: %s\n", p, err);
+    error("ParseError at byte %d :: %s\n", p, err);
 }
 
 static void warning_parse(const char *source, int p, const char *wrn) {
     print_escaped(source, p);
-    fprintf(stderr, "ParseWarning at byte %d :: %s\n", p, wrn);
+    warning("ParseWarning at byte %d :: %s\n", p, wrn);
 }
 
 
