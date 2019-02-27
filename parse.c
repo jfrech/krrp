@@ -270,8 +270,8 @@ static int _parse(const char *source, int p, AtomList *parsed, parse_state state
             p = parse_structinitializer(source, p, parsed);
 
         // <primitive>
-        //else if (c == '!' || c == ',' || c == ';' || c == '?' || c == '|' || c == '&')
-        else if (c == ',' || c == ';')
+        else if (c == '!' || c == ',' || c == ';' || c == '?' || c == '|' || c == '&')
+        //else if (c == ',' || c == ';')
             atomlist_push(parsed, atom_primitive_new(c));
 
         // <literal>
