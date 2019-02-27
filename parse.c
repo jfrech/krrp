@@ -6,41 +6,24 @@
 #include "error.h"
 #include "memorymanagement.h"
 
-// internal parse function (recursively called in each function declaration)
+
 static int _parse(const char *source, int p, AtomList *parsed, parse_state state);
+static void error_parse(const char *source, int p, const char *err);
 
-/* TODO: fancify the grammar
+AtomList *parse(const char *source) {
+    AtomList *parsed = atomlist_new(NULL);
+    if (_parse(source, 0, parsed, parse_state_main))
+        return atomlist_free(parsed), error_parse(source, -1, "parse: Parsing failed."), NULL;
 
-    <program> ::= <statement>*[\0]
-    <statement> ::= <name>
-                    | <literal>
-                    | <primitive>
-                    | <functiondeclaration>
-                    | <whitespace>
-                    | <comment>
-    <name> ::= [^\0 \t\n$!,;?|&^.:]
-               | \[[^\0\]]]
-    <literal> ::= $[0-9]+.
-    <primitive> ::= #! | #? | [!,;?|&]
-    <functiondeclaration> ::= ^<name>*:<statement>+.
-    <whitespace> ::= [ \t\n]+
-    <comment> ::= ~[^\0\n]*
-
-    <...>: non-terminal
-    |: alternation
-    *, +: quantifiers
-    [...]: character class
-    [^...]: complement character class
-*/
-
-
+    return parsed;
+}
 
 
 // TODO :: `fprintf`
 static void print_escaped(const char *source, int p) {
-    fprintf(stderr, "\n    ");
+    fprintf(stderr, "    ");
 
-    int len = 0, width = 0;
+    int len = 0, width = 1;
     unsigned char c;
     for (int j = 0; (c = source[j]); j++) {
         if (c == '\t' || c == '\n') {
@@ -60,47 +43,30 @@ static void print_escaped(const char *source, int p) {
         }
     }
 
-    fprintf(stderr, "\n    ");
-    for (int j = 0; j < len; j++)
-        fprintf(stderr, " ");
-    for (int j = 0; j < width; j++)
-        fprintf(stderr, "^");
+    if (p >= 0) {
+        fprintf(stderr, "\n    ");
+        for (int j = 0; j < len; j++)
+            fprintf(stderr, " ");
+        for (int j = 0; j < width; j++)
+            fprintf(stderr, "^ byte %d", p);
+    }
+    else
+        fprintf(stderr, "\n   ^ (byte unknown)");
+
     fprintf(stderr, "\n");
 }
 
 static void error_parse(const char *source, int p, const char *err) {
-    if (p < 0) {
-        error("ParseError :: %s\n", err);
-        return;
-    }
-
     print_escaped(source, p);
-
-    error("ParseError at byte %d :: %s\n", p, err);
+    error("ParseError :: %s\n", err);
 }
 
 static void warning_parse(const char *source, int p, const char *wrn) {
     print_escaped(source, p);
-    warning("ParseWarning at byte %d :: %s\n", p, wrn);
+    warning("ParseWarning :: %s\n", wrn);
 }
 
-
-
-
-
-
-
-
-
-
-static bool is_special_char(char c) {
-    const char *special = "~ \t\n^!,;?|&$[.:#";
-    while (*special)
-        if (c == *special++)
-            return true;
-
-    return false;
-}
+/* --- */
 
 static int parse_comment(const char *source, int p) {
     if (source[p] != '~')
@@ -122,19 +88,22 @@ static int parse_functiondeclaration(const char *source, int p, AtomList *parsed
     // parse parameters
     int s = p;
     AtomList *parameters = atomlist_new(NULL);
+    #define RETURN return atomlist_free(parameters),
     p = _parse(source, ++p, parameters, parse_state_functiondeclaration_parameters);
 
+
+
     if (p == -1)
-        return error_parse(source, s, "parse_functiondeclaration: Could not parse function declaration parameters."), -1;
+        RETURN error_parse(source, s, "parse_functiondeclaration: Could not parse function declaration parameters."), -1;
 
     if (source[p] != ':')
-        return error_parse(source, p, "parse_functiondeclaration: Function declaration needs body."), -1;
+        RETURN error_parse(source, p, "parse_functiondeclaration: Function declaration needs body."), -1;
 
     // only names are permitted as parameters
     AtomListNode *node = parameters->head;
     while (node) {
         if (!atom_name_is(node->atom))
-            return error_parse(source, s, "parse_functiondeclaration: Found non-name in function declaration parameters."), -1;
+            RETURN error_parse(source, s, "parse_functiondeclaration: Found non-name in function declaration parameters."), -1;
 
         node = node->next;
     }
@@ -144,13 +113,15 @@ static int parse_functiondeclaration(const char *source, int p, AtomList *parsed
 
     // parse body
     AtomList *body = atomlist_new(NULL);
+    #undef RETURN
+    #define RETURN return atomlist_free(parameters), atomlist_free(body),
     p = _parse(source, ++p, body, parse_state_functiondeclaration_body);
 
     if (p == -1)
-        return error_parse(source, s, "parse_functiondeclaration: Could not parse function declaration body."), -1;
+        RETURN error_parse(source, s, "parse_functiondeclaration: Could not parse function declaration body."), -1;
 
     if (source[p] != '.')
-        return error_parse(source, p, "parse_functiondeclaration: Function declaration body unfinished."), -1;
+        RETURN error_parse(source, p, "parse_functiondeclaration: Function declaration body unfinished."), -1;
 
     if (!body->head)
         warning_parse(source, s, "parse_functiondeclaration: Function declaration without body.");
@@ -158,6 +129,7 @@ static int parse_functiondeclaration(const char *source, int p, AtomList *parsed
     // assemble function declaration
     atomlist_push(parsed, atom_functiondeclaration_new(atomlist_len(parameters), parameters, body));
 
+    #undef RETURN
     return p;
 }
 
@@ -169,6 +141,7 @@ static int parse_structinitializer(const char *source, int p, AtomList *parsed) 
         return atomlist_push(parsed, atom_primitive_new('#' + source[p+1])), p+1;
 
     AtomList *fields = atomlist_new(NULL);
+    #define RETURN return atomlist_free(fields), // TODO
     p = _parse(source, ++p, fields, parse_state_struct_fields);
 
     if (p == -1)
@@ -221,9 +194,6 @@ static int parse_literal(const char *source, int p, AtomList *parsed) {
 }
 
 static int parse_name(const char *source, int p, AtomList *parsed) {
-    if (is_special_char(source[p]) && source[p] != '[')
-    ;//TODO    return error_parse(source, p, "parse_name: Attempting to parse non-name."), -1;
-
     if (source[p] != '[') {
         char *name = mm_malloc("parse_name", sizeof *name + 1);
         name[0] = source[p];
@@ -252,7 +222,7 @@ static int parse_name(const char *source, int p, AtomList *parsed) {
 // internal parse function (recursively called in each function declaration)
 static int _parse(const char *source, int p, AtomList *parsed, parse_state state) {
     for (char c; (c = source[p]); p++) {
-        int current_parsing_position = p;
+        int _p = p;
 
         // <comment>
         if (c == '~')
@@ -262,7 +232,7 @@ static int _parse(const char *source, int p, AtomList *parsed, parse_state state
         else if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
             ;
 
-        // <functiondeclaration>
+        // <function_declaration>
         else if (c == '^')
             p = parse_functiondeclaration(source, p, parsed);
 
@@ -270,11 +240,10 @@ static int _parse(const char *source, int p, AtomList *parsed, parse_state state
             p = parse_structinitializer(source, p, parsed);
 
         // <primitive>
-        else if (c == '!' || c == ',' || c == ';' || c == '?' || c == '|' || c == '&')
-        //else if (c == ',' || c == ';')
+        else if (c == ',' || c == ';' || c == '!' || c == '?' || c == '|' || c == '&')
             atomlist_push(parsed, atom_primitive_new(c));
 
-        // <literal>
+        // <long_literal>
         else if (c == '$')
             p = parse_literal(source, p, parsed);
 
@@ -306,20 +275,11 @@ static int _parse(const char *source, int p, AtomList *parsed, parse_state state
 
         // propagate error
         if (p == -1)
-            return error_parse(source, current_parsing_position, "parse: Parsing failed."), -1;
+            return error_parse(source, _p, "parse: Parsing failed."), -1;
     }
 
     if (state != parse_state_main)
-        return error_parse(source, p, "parse: No delimiter found in non-main (most likely function declaration or struct field) parsing."), -1;
+        return error_parse(source, p, "parse: Parsing ended in non-main state."), -1;
 
     return 0;
-}
-
-// main parse function, returns parsed source code as an AtomList
-AtomList *parse(const char *source) {
-    AtomList *parsed = atomlist_new(NULL);
-    if (_parse(source, 0, parsed, parse_state_main))
-        return atomlist_free(parsed), error_parse(source, -1, "parse: Parsing failed."), NULL;
-
-    return parsed;
 }

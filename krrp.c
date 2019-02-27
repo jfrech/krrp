@@ -58,10 +58,10 @@ int main(int argc, char **argv) {
     // memory initialization
     globaloptions_init();
     globalatomtable_init();
+    AtomList *al_sources = atomlist_new(NULL);
 
     // arguments
     bool test_mode = false;
-    AtomList *al_sources = atomlist_new(NULL);
     {
         if (argc < 1)
             MAIN_ERR("Please specify a krrp source file. Use `-h` for help.\n");
@@ -130,6 +130,7 @@ int main(int argc, char **argv) {
             char *source = mm_malloc("main: source", sizeof *source * (source_length + 1));
             fread(source, sizeof *source, source_length, f);
             source[source_length] = '\0';
+            atom_string_new(source); // only for reference keeping
             fclose(f);
 
 
@@ -137,17 +138,19 @@ int main(int argc, char **argv) {
 
             info("=== Parsing ===\n");
             AtomList *parsed = parse(source);
-            info(".> %s\n", atomlist_str(parsed));
 
+            if (parsed == NULL) {
+                atomlist_free(al_sources); // TODO :: This list also never gets freed upon an error.
+                MAIN_ERR("Could not parse source.\n");
+            }
+
+            info(".> %s\n", atomlist_str(parsed));
             info("=== Interpreting ===\n");
             Atom *scope = main_scope();
             while (!atomlist_empty(parsed))
                 printf("%s\n", atom_repr(interpret(0, parsed, scope, true)));
 
             atomlist_free(parsed); // TODO :: This list also never gets freed upon an error.
-
-
-            mm_free("main: source", source);
         }
     }
 

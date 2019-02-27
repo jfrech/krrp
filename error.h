@@ -3,7 +3,7 @@
 
 #define ERROR true
 #define WARNING true
-#define INFO false
+#define INFO !true
 
 #include <stdio.h>
 
