@@ -14,19 +14,12 @@ char *strdup(const char *str) {
     return dup;
 }
 
-#define HGHLEN 7
-#define HGH "\033[1;32m"
-#define CLRLEN 4
-#define CLR "\033[0m"
-
 static int escaped_character_length(unsigned char c) {
-    int z = GlobalOptions->color ? HGHLEN+CLRLEN : 0;
-
     if (c == '\t' || c == '\n' || c == '"' || c == '\\')
-        return 2+z;
+        return 2;
     if ((0 <= c && c <= 31) || (127 <= c && c <= 255))
-        return 4+z;
-    return 1+z;
+        return 4;
+    return 1;
 }
 
 char *stresc(const char *str) {
@@ -40,13 +33,11 @@ char *stresc(const char *str) {
     for (int j = 0; (c = str[j]); j++) {
         if ((32 <= c && c <= 126) && c != '"' && c != '\\') s += sprintf(s, "%c", c);
         else {
-            if (GlobalOptions->color) s += sprintf(s, HGH);
             if (c == '\t') s += sprintf(s, "\\t");
             else if (c == '\n') s += sprintf(s, "\\n");
             else if (c == '"') s += sprintf(s, "\\\"");
             else if (c == '\\') s += sprintf(s, "\\\\");
             else if ((0 <= c && c <= 31) || (127 <= c && c <= 255)) s += sprintf(s, "\\x%2X", c);
-            if (GlobalOptions->color) s += sprintf(s, CLR);
         }
     }
 

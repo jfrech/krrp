@@ -5,7 +5,6 @@
 #include "atom.h"
 #include "error.h"
 #include "memorymanagement.h"
-#include "color.h"
 
 // internal parse function (recursively called in each function declaration)
 static int _parse(const char *source, int p, AtomList *parsed, parse_state state);
@@ -71,26 +70,18 @@ static void print_escaped(const char *source, int p) {
 
 static void error_parse(const char *source, int p, const char *err) {
     if (p < 0) {
-        if (GlobalOptions->color)
-            fprintf(stderr, "%sParseError%s :: %s\n", ERR, CLR, err);
-        else
-            fprintf(stderr, "ParseError :: %s\n", err);
+        fprintf(stderr, "ParseError :: %s\n", err);
         return;
     }
 
     print_escaped(source, p);
-    if (GlobalOptions->color)
-        fprintf(stderr, "%sParseError%s at byte %d :: %s\n", ERR, CLR, p, err);
-    else
-        fprintf(stderr, "ParseError at byte %d :: %s\n", p, err);
+
+    fprintf(stderr, "ParseError at byte %d :: %s\n", p, err);
 }
 
 static void warning_parse(const char *source, int p, const char *wrn) {
     print_escaped(source, p);
-    if (GlobalOptions->color)
-        fprintf(stderr, "%sParseWarning%s at byte %d :: %s\n", WRN, CLR, p, wrn);
-    else
-        fprintf(stderr, "ParseWarning at byte %d :: %s\n", p, wrn);
+    fprintf(stderr, "ParseWarning at byte %d :: %s\n", p, wrn);
 }
 
 
