@@ -3,6 +3,7 @@
 
 #include "atomlist.h"
 #include <stdbool.h>
+#include <stdio.h>
 
 // used to declare empty structs
 #define EMPTY char _;
@@ -95,5 +96,10 @@ Atom *atom_string_fromlong(long n);
 Atom *atom_string_fromchar(char c);
 Atom *atom_string_newfl(const char *str);
 Atom *atom_string_newcopy(const char *str);
+
+struct FileAtom { FILE *file; };
+Atom *atom_file_new(FILE *file);
+Atom *atom_file_open(const char *filename);
+Atom *atom_file_read(Atom *file);
 
 #endif

@@ -10,6 +10,8 @@
 #include "options.h"
 #include "memorymanagement.h"
 
+#include "parse.h" // TODO?
+
 extern Options *GlobalOptions;
 
 #define ASSERT(cnd, ...) { if (!(cnd)) return error("interpret :: " __VA_ARGS__), atom_Enull_new(); }
@@ -259,9 +261,8 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 else if (c == '|' ||  c == '&')
                     ASSERT(false, "TODO :: Functionality for `|` and `&` is not yet implemented.\n")
 
-                // TODO :: extract
                 // struct type check
-                else if (c == '#' + '?') {
+                else if (c == '#' + '?' /* == 'b' */) {
                     if (!active) {
                         atomlist_pop_front(atoms);
                         interpret(recursion_depth+1, atoms, scope, false);
@@ -279,9 +280,8 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                     return atom_integer_new(atom_equal(struct_atom->type, type));
                 }
 
-                // TODO :: extract
                 // struct field extraction
-                else if (c == '#' + '!') {
+                else if (c == '#' + '!' /* == 'D' */) {
                     if (!active) {
                         atomlist_pop_front(atoms);
                         interpret(recursion_depth+1, atoms, atom_scope_new_fake(scope), false);
@@ -300,6 +300,40 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
 
                     return extracted;
                 }
+
+                // import
+                /*
+                    Before  : _ << parent_scope << scope <<|
+                    Imported: _ << imported_scope <<|
+                    After   : parent_scope << imported_scope << scope <<|
+                */
+                else if (c == '\\') {
+                    Atom *import_name = atomlist_pop_front(atoms);
+                    ASSERT(atom_name_is(import_name), "interpret: Import needs NameAtom, got %s.\n", atom_repr(import_name))
+
+                    const char *import_source = "!j^n:?n*n@-n11."; // TODO :: File reading.
+                    AtomList *import_parsed = parse(import_source);
+                    atomlist_push(import_parsed, atom_primitive_new('S'));
+
+                    // TODO :: Proper `interpret_entry(AtomList *atoms);`
+                    Atom *imported_scope = interpret(0, import_parsed, main_scope(), true);
+
+                    atomlist_free(import_parsed);
+
+                    //Atom *imported_scope = atom_scope_new_empty();
+                    ScopeAtom *imported_scope_atom = imported_scope->atom;
+                    //atom_scope_push(imported_scope, atom_name_new(strdup("I")), atom_integer_new(-5));
+
+                    ScopeAtom *scope_atom = scope->atom;
+
+                    Atom *parent_scope = scope_atom->upper_scope;
+                    scope_atom->upper_scope = imported_scope;
+                    imported_scope_atom->upper_scope = parent_scope;
+                }
+
+                // only used internally; returns the current scope
+                else if (c == 'S')
+                    return scope;
 
                 else
                     ASSERT(false, "interpret: Unknown primitive `%s`.\n", atom_repr(atom))

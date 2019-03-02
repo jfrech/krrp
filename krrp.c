@@ -120,18 +120,15 @@ int main(int argc, char **argv) {
             const char *filename = ((StringAtom *) a_source->atom)->str;
 
             info("* Reading file `%s` ...\n", filename);
-            FILE *f = fopen(filename, "rb");
-            if (!f)
-                MAIN_ERR("Could not open krrp source file ??`%s`.\n", filename);
-            fseek(f, 0, SEEK_END);
-            int source_length = ftell(f);
-            fseek(f, 0, SEEK_SET);
-            // TODO :: On mm_malloc error, the file is not closed.
-            char *source = mm_malloc("main: source", sizeof *source * (source_length + 1));
-            fread(source, sizeof *source, source_length, f);
-            source[source_length] = '\0';
-            atom_string_new(source); // only for reference keeping
-            fclose(f);
+
+            // TODO :: Verification.
+            Atom *file_a = atom_file_open(filename);
+            Atom *source_a = atom_file_read(file_a);
+            if (!atom_is_of_type(source_a, atom_type_string))
+                MAIN_ERR("Could not open krrp source file `%s`.\n", filename);
+            StringAtom *source_a_atom = source_a->atom;
+            const char *source = source_a_atom->str;
+            mm_prematurely_free_mutable(file_a);
 
 
             print_escaped_source(source);

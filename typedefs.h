@@ -21,6 +21,7 @@ typedef struct ScopeAtom ScopeAtom;
 typedef struct StructInitializerAtom StructInitializerAtom;
 typedef struct StructAtom StructAtom;
 typedef struct StringAtom StringAtom;
+typedef struct FileAtom FileAtom;
 
 // atom list
 typedef struct AtomList AtomList;
@@ -45,7 +46,8 @@ typedef enum {
     atom_type_structinitializer,
     atom_type_struct,
 
-    atom_type_string
+    atom_type_string,
+    atom_type_file
 } atom_type;
 
 #endif

@@ -15,6 +15,8 @@ typedef struct {
 void *mm_malloc(const char *msg, size_t n);
 void mm_free(const char *msg, void *ptr);
 
+void mm_prematurely_free_mutable(Atom *atom);
+
 void mm_print_status();
 
 void mm_free_gat();

@@ -41,6 +41,11 @@ void mm_free(const char *msg, void *ptr) {
     dbg.deallocations++;
 }
 
+void mm_prematurely_free_mutable(Atom *atom) {
+    atomlist_remove_by_pointer(GlobalAtomTableMutable, atom);
+    atom_free(atom);
+}
+
 void mm_print_status() {
     info("* Memory management status *\n");
     info("Allocated        : %ld\n", dbg.allocations);
@@ -159,6 +164,12 @@ void atom_free(Atom *atom) {
         StringAtom *string_atom = atom->atom;
         mm_free("atom_free: string_atom->str", string_atom->str);
         mm_free("atom_free: string_atom", string_atom);
+    }
+    else if (atom->type == atom_type_file) {
+        FileAtom *file_atom = atom->atom;
+        fclose(file_atom->file);
+        fprintf(stderr, "Closed a file.\n");
+        mm_free("atom_free: file_atom", file_atom);
     }
     else
         memorymanagement_FATAL_ERROR("atom_free: Trying to mm_free atom of unknown type\n");

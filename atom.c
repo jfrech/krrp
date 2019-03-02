@@ -44,7 +44,9 @@ static Atom *_atom_new(atom_type type, void *atom) {
 Atom *atom_new(atom_type type, void *atom) {
     Atom *natom = _atom_new(type, atom);
 
-    if (natom->type == atom_type_scope || natom->type == atom_type_function)
+    if (natom->type == atom_type_scope
+    || natom->type == atom_type_function
+    || natom->type == atom_type_file)
         atomlist_push_front(GlobalAtomTableMutable, natom);
     else
         atomlist_push_front(GlobalAtomTable, natom);
@@ -749,3 +751,36 @@ Atom *atom_string_newcopy(const char *str) {
 
 #undef start_GlobalAtomTable_cashing
 #undef end_GlobalAtomTable_cashing
+
+Atom *atom_file_new(FILE *f) {
+    FileAtom *file_atom = mm_malloc("atom_file_new", sizeof *file_atom);
+    file_atom->file = f;
+
+    return atom_new(atom_type_file, file_atom);
+}
+
+Atom *atom_file_open(const char *filename) {
+    FILE *f = fopen(filename, "rb");
+    if (!f)
+        return error_atom("atom_file_open; Could not open file `%s`.\n", filename), NULL;
+
+    return atom_file_new(f);
+}
+
+Atom *atom_file_read(Atom *file) {
+    if (!atom_is_of_type(file, atom_type_file))
+        return error_atom("atom_file_read: Expected file atom, got `%s`.\n", atom_repr(file)), NULL;
+
+    FileAtom *file_atom = file->atom;
+    FILE *f = file_atom->file;
+
+    fseek(f, 0, SEEK_END);
+    int length = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    char *content = mm_malloc("atom_file_read", sizeof *content * (length + 1));
+    fread(content, sizeof *content, length, f);
+    content[length] = '\0';
+
+    return atom_string_new(content);
+}

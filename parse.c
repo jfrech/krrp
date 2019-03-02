@@ -21,7 +21,7 @@
 
 <long_name>            ::= "[" [^\0\]] "]"
 <long_literal>         ::= "$" [0-9]+ "."
-<primitive>            ::= "," | ";" | "#!" | "#?"
+<primitive>            ::= "," | ";" | "#!" | "#?" | "\\"
 <function_declaration> ::= "^" <name>* ":" <statement>+ "."
 <whitespace>           ::= " " | "\n"
 <comment>              ::= "~" [^\0\n]*
@@ -59,6 +59,8 @@ static void print_escaped(const char *source, int p) {
 
         if (c == '\n')
             fprintf(stderr, "\\n"), w = 2;
+        else if (c == '\\')
+            fprintf(stderr, "\\\\"), w = 2;
         else if ((0 <= c && c <= 31) || c >= 127)
             fprintf(stderr, "\\x%02x", c), w = 4;
         else
@@ -265,7 +267,7 @@ static int _parse(const char *source, int p, AtomList *parsed, parse_state state
         int _p = p;
 
         // <primitive>
-        if (c == ',' || c == ';' || c == '!' || c == '?' || c == '|' || c == '&')
+        if (c == ',' || c == ';' || c == '!' || c == '?' || c == '|' || c == '&' || c == '\\')
             atomlist_push(parsed, atom_primitive_new(c));
 
         // <function_declaration>
