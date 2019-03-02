@@ -6,6 +6,36 @@
 #include "error.h"
 #include "memorymanagement.h"
 
+/*** GRAMMAR ***
+
+<program> ::= <statement>* "\0"
+
+<statement> ::= <primitive>
+              | <function_declaration>
+              | <struct_initialization>
+              | <comment>
+              | <whitespace>
+              | <long_literal>
+              | <long_name>
+              | <name>
+
+<long_name>            ::= "[" [^\0\]] "]"
+<long_literal>         ::= "$" [0-9]+ "."
+<primitive>            ::= "," | ";" | "#!" | "#?"
+<function_declaration> ::= "^" <name>* ":" <statement>+ "."
+<whitespace>           ::= " " | "\n"
+<comment>              ::= "~" [^\0\n]*
+<name>                 ::= [^\0]
+
+<...>  : non-terminal
+|      : alternation
+*, +   : quantifiers
+\...   : escaped character (using ASCII)
+"..."  : literal
+[...]  : character class
+[^...] : complemented character class
+
+*/
 
 static int _parse(const char *source, int p, AtomList *parsed, parse_state state);
 static void error_parse(const char *source, int p, const char *err);
@@ -19,28 +49,23 @@ AtomList *parse(const char *source) {
 }
 
 
-// TODO :: `fprintf`
 static void print_escaped(const char *source, int p) {
     fprintf(stderr, "    ");
 
     int len = 0, width = 1;
     unsigned char c;
     for (int j = 0; (c = source[j]); j++) {
-        if (c == '\t' || c == '\n') {
-            fprintf(stderr, c == '\t' ? "\\t" : "\\n");
-            if (j < p) len += 2;
-            if (j == p) width = 2;
-        }
-        else if ((0 <= c && c <= 31) || c >= 127) {
-            fprintf(stderr, "\\x%02x", c);
-            if (j < p) len += 4;
-            if (j == p) width = 4;
-        }
-        else {
+        int w = 1;
+
+        if (c == '\n')
+            fprintf(stderr, "\\n"), w = 2;
+        else if ((0 <= c && c <= 31) || c >= 127)
+            fprintf(stderr, "\\x%02x", c), w = 4;
+        else
             fprintf(stderr, "%c", c);
-            if (j < p) len++;
-            if (j == p) width = 1;
-        }
+
+        if (j < p) len += w;
+        if (j == p) width = w;
     }
 
     if (p >= 0) {
@@ -48,7 +73,8 @@ static void print_escaped(const char *source, int p) {
         for (int j = 0; j < len; j++)
             fprintf(stderr, " ");
         for (int j = 0; j < width; j++)
-            fprintf(stderr, "^ byte %d", p);
+            fprintf(stderr, "^");
+        fprintf(stderr, " byte %d", p);
     }
     else
         fprintf(stderr, "\n   ^ (byte unknown)");
@@ -66,7 +92,6 @@ static void warning_parse(const char *source, int p, const char *wrn) {
     warning("ParseWarning :: %s\n", wrn);
 }
 
-/* --- */
 
 static int parse_comment(const char *source, int p) {
     if (source[p] != '~')
@@ -141,36 +166,51 @@ static int parse_structinitializer(const char *source, int p, AtomList *parsed) 
         return atomlist_push(parsed, atom_primitive_new('#' + source[p+1])), p+1;
 
     AtomList *fields = atomlist_new(NULL);
-    #define RETURN return atomlist_free(fields), // TODO
+    #define RETURN return atomlist_free(fields),
     p = _parse(source, ++p, fields, parse_state_struct_fields);
 
     if (p == -1)
-        return error_parse(source, p, "parse_structinitializer: Could not parse struct declaration fields."), -1;
+        RETURN error_parse(source, p, "parse_structinitializer: Could not parse struct declaration fields."), -1;
 
     if (source[p] != '.')
-        return error_parse(source, p, "parse_structinitializer: Struct fields unfinished."), -1;
+        RETURN error_parse(source, p, "parse_structinitializer: Struct fields unfinished."), -1;
 
-    AtomListNode *node = fields->head;
-    while (node) {
-        if (!atom_name_is(node->atom))
-            return error_parse(source, p, "parse_structinitializer: Found non-name in struct declaration fields."), -1;
+    {
+        AtomListNode *node = fields->head;
+        while (node) {
+            if (!atom_name_is(node->atom))
+                RETURN error_parse(source, p, "parse_structinitializer: Found non-name in struct declaration fields."), -1;
 
-        node = node->next;
+            node = node->next;
+        }
     }
 
     if (atomlist_len(fields) < 1)
-        return error_parse(source, p, "parse_structinitializer: Found no struct type name."), -1;
-
-    // TODO error on duplicate fields
+        RETURN error_parse(source, p, "parse_structinitializer: Found no struct type name."), -1;
 
     Atom *type = atomlist_pop_front(fields);
 
+    {
+        AtomListNode *node = fields->head;
+        while (node) {
+            AtomListNode *mode = node->next;
+            while (mode) {
+                if (atom_equal(node->atom, mode->atom))
+                    warning_parse(source, p, "Duplicate struct field names.");
+
+                mode = mode->next;
+            }
+
+            node = node->next;
+        }
+    }
+
     atomlist_push(parsed, atom_structinitializer_new(type, fields));
 
+    #undef RETURN
     return p;
 }
 
-// TODO refactor
 static int parse_literal(const char *source, int p, AtomList *parsed) {
     if (source[p] != '$')
         return error_parse(source, p, "parse_literal: Attempting to parse non-literal."), -1;
@@ -187,7 +227,7 @@ static int parse_literal(const char *source, int p, AtomList *parsed) {
         literalstr[j] = source[s+1+j];
     literalstr[p-s-1] = '\0';
 
-    atomlist_push(parsed, atom_integer_new(atol(literalstr))); // TODO: check if string is valid literal
+    atomlist_push(parsed, atom_integer_new(atol(literalstr)));
     mm_free("parse_literal", literalstr);
 
     return p;
@@ -224,29 +264,15 @@ static int _parse(const char *source, int p, AtomList *parsed, parse_state state
     for (char c; (c = source[p]); p++) {
         int _p = p;
 
-        // <comment>
-        if (c == '~')
-            p = parse_comment(source, p);
-
-        // <whitespace>
-        else if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
-            ;
+        // <primitive>
+        if (c == ',' || c == ';' || c == '!' || c == '?' || c == '|' || c == '&')
+            atomlist_push(parsed, atom_primitive_new(c));
 
         // <function_declaration>
         else if (c == '^')
             p = parse_functiondeclaration(source, p, parsed);
 
-        else if (c == '#')
-            p = parse_structinitializer(source, p, parsed);
-
-        // <primitive>
-        else if (c == ',' || c == ';' || c == '!' || c == '?' || c == '|' || c == '&')
-            atomlist_push(parsed, atom_primitive_new(c));
-
-        // <long_literal>
-        else if (c == '$')
-            p = parse_literal(source, p, parsed);
-
+        // <function_declaration>
         // ':' is only permitted in function declaration
         else if (c == ':') {
             if (state != parse_state_functiondeclaration_parameters) {
@@ -258,6 +284,23 @@ static int _parse(const char *source, int p, AtomList *parsed, parse_state state
             return p;
         }
 
+        // <primitive>, <struct_initialization>
+        else if (c == '#')
+            p = parse_structinitializer(source, p, parsed);
+
+        // <comment>
+        else if (c == '~')
+            p = parse_comment(source, p);
+
+        // <whitespace>
+        else if (c == ' ' || c == '\n')
+            ;
+
+        // <long_literal>
+        else if (c == '$')
+            p = parse_literal(source, p, parsed);
+
+        // <function_declaration>, <struct_initialization>, <long_literal>
         // '.' is only permitted as a delimiter
         else if (c == '.') {
             if (state != parse_state_functiondeclaration_body && state != parse_state_struct_fields) {
@@ -269,9 +312,10 @@ static int _parse(const char *source, int p, AtomList *parsed, parse_state state
             return p;
         }
 
-        // <name>
+        // <long_name>, <name>
         else
             p = parse_name(source, p, parsed);
+
 
         // propagate error
         if (p == -1)
@@ -280,6 +324,7 @@ static int _parse(const char *source, int p, AtomList *parsed, parse_state state
 
     if (state != parse_state_main)
         return error_parse(source, p, "parse: Parsing ended in non-main state."), -1;
+
 
     return 0;
 }
