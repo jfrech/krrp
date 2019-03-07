@@ -168,8 +168,14 @@ void atom_free(Atom *atom) {
     else if (atom->type == atom_type_file) {
         FileAtom *file_atom = atom->atom;
         fclose(file_atom->file);
-        fprintf(stderr, "Closed a file.\n");
+        if (GlobalOptions->verbose)
+            fprintf(stderr, "Closed a file.\n");
         mm_free("atom_free: file_atom", file_atom);
+    }
+    else if (atom->type == atom_type_list) {
+        ListAtom *list_atom = atom->atom;
+        atomlist_free(list_atom->list);
+        mm_free("atom_free: list_atom", list_atom);
     }
     else
         memorymanagement_FATAL_ERROR("atom_free: Trying to mm_free atom of unknown type\n");

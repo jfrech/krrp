@@ -18,7 +18,6 @@ void test(const char *source, Atom *expected) {
     if (!atom_equal(computed, expected))
         error("[FAIL] \"%s\"\n   :: '%s' differs from expected '%s'.\n", esource, atom_repr(computed), atom_repr(expected));
 
-    atomlist_free(parsed);
     mm_free("test", esource);
 }
 

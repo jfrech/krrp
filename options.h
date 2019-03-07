@@ -7,6 +7,8 @@
 typedef struct Options Options;
 
 struct Options {
+    bool verbose;
+    
     bool debug_address;
     bool debug_printGlobalAtomTable;
 

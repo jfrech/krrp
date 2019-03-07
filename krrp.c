@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
     // memory initialization
     globaloptions_init();
     globalatomtable_init();
-    AtomList *al_sources = atomlist_new(NULL);
+    AtomList *al_sources = new_boxed_atomlist();
 
     // arguments
     bool test_mode = false;
@@ -113,6 +113,9 @@ int main(int argc, char **argv) {
 
     // interpreting
     else {
+        if (atomlist_empty(al_sources))
+            MAIN_ERR("Please specify a krrp source file.\n");
+
         while (!atomlist_empty(al_sources)) {
             Atom *a_source = atomlist_pop_front(al_sources);
             if (!atom_string_is(a_source))
@@ -136,22 +139,16 @@ int main(int argc, char **argv) {
             info("=== Parsing ===\n");
             AtomList *parsed = parse(source);
 
-            if (parsed == NULL) {
-                atomlist_free(al_sources); // TODO :: This list also never gets freed upon an error.
+            if (parsed == NULL)
                 MAIN_ERR("Could not parse source.\n");
-            }
 
             info(".> %s\n", atomlist_str(parsed));
             info("=== Interpreting ===\n");
             Atom *scope = main_scope();
             while (!atomlist_empty(parsed))
                 printf("%s\n", atom_repr(interpret(0, parsed, scope, true)));
-
-            atomlist_free(parsed); // TODO :: This list also never gets freed upon an error.
         }
     }
-
-    atomlist_free(al_sources); // TODO :: This list also never gets freed upon an error.
 
     // memory destruction
     RETURN EXIT_SUCCESS;

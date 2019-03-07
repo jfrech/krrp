@@ -46,7 +46,8 @@ Atom *atom_new(atom_type type, void *atom) {
 
     if (natom->type == atom_type_scope
     || natom->type == atom_type_function
-    || natom->type == atom_type_file)
+    || natom->type == atom_type_file
+    || natom->type == atom_type_list)
         atomlist_push_front(GlobalAtomTableMutable, natom);
     else
         atomlist_push_front(GlobalAtomTable, natom);
@@ -783,4 +784,34 @@ Atom *atom_file_read(Atom *file) {
     content[length] = '\0';
 
     return atom_string_new(content);
+}
+
+Atom *atom_list_new(AtomList *list) {
+    ListAtom *list_atom = mm_malloc("atom_list_new", sizeof *list_atom);
+    list_atom->list = list;
+
+    return atom_new(atom_type_list, list_atom);
+}
+
+bool atom_list_is(Atom *atom) {
+    if (!atom_is_of_type(atom, atom_type_list))
+        return false;
+
+    ListAtom *list_atom = atom->atom;
+    if (!atomlist_is(list_atom->list))
+        return error_atom("atom_list_is: Invalid list atom.\n"), false;
+
+    return true;
+}
+
+AtomList *atom_list_get(Atom *atom) {
+    if (!atom_list_is(atom))
+        return error_atom("atom_list_get: Expected list atom, got `%s`.\n", atom_repr(atom)), NULL;
+
+    ListAtom *list_atom = atom->atom;
+    return list_atom->list;
+}
+
+AtomList *new_boxed_atomlist() {
+    return atom_list_get(atom_list_new(atomlist_new(NULL)));
 }

@@ -41,9 +41,9 @@ static int _parse(const char *source, int p, AtomList *parsed, parse_state state
 static void error_parse(const char *source, int p, const char *err);
 
 AtomList *parse(const char *source) {
-    AtomList *parsed = atomlist_new(NULL);
+    AtomList *parsed = new_boxed_atomlist();
     if (_parse(source, 0, parsed, parse_state_main))
-        return atomlist_free(parsed), error_parse(source, -1, "parse: Parsing failed."), NULL;
+        return error_parse(source, -1, "parse: Parsing failed."), NULL;
 
     return parsed;
 }

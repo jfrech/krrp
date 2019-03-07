@@ -102,4 +102,10 @@ Atom *atom_file_new(FILE *file);
 Atom *atom_file_open(const char *filename);
 Atom *atom_file_read(Atom *file);
 
+struct ListAtom { AtomList *list; };
+Atom *atom_list_new(AtomList *list);
+bool atom_list_is(Atom *atom);
+AtomList *atom_list_get();
+AtomList *new_boxed_atomlist();
+
 #endif

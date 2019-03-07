@@ -10,6 +10,8 @@ Options *GlobalOptions;
 void globaloptions_init() {
     GlobalOptions = mm_malloc("globaloptions_init", sizeof *GlobalOptions);
 
+    GlobalOptions->verbose = false;
+
     GlobalOptions->debug_address = false;
     GlobalOptions->debug_printGlobalAtomTable = !true; // TODO
     GlobalOptions->pedantic_scope_verification = true;
