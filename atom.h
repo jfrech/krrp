@@ -96,11 +96,8 @@ Atom *atom_string_fromlong(long n);
 Atom *atom_string_fromchar(char c);
 Atom *atom_string_newfl(const char *str);
 Atom *atom_string_newcopy(const char *str);
-
-struct FileAtom { FILE *file; };
-Atom *atom_file_new(FILE *file);
-Atom *atom_file_open(const char *filename);
-Atom *atom_file_read(Atom *file);
+Atom *atom_string_read_from_file(const char *file_name);
+const char *atom_from_string(Atom *atom);
 
 struct ListAtom { AtomList *list; };
 Atom *atom_list_new(AtomList *list);

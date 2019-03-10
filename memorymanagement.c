@@ -165,13 +165,6 @@ void atom_free(Atom *atom) {
         mm_free("atom_free: string_atom->str", string_atom->str);
         mm_free("atom_free: string_atom", string_atom);
     }
-    else if (atom->type == atom_type_file) {
-        FileAtom *file_atom = atom->atom;
-        fclose(file_atom->file);
-        if (GlobalOptions->verbose)
-            fprintf(stderr, "Closed a file.\n");
-        mm_free("atom_free: file_atom", file_atom);
-    }
     else if (atom->type == atom_type_list) {
         ListAtom *list_atom = atom->atom;
         atomlist_free(list_atom->list);

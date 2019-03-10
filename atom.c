@@ -46,7 +46,6 @@ Atom *atom_new(atom_type type, void *atom) {
 
     if (natom->type == atom_type_scope
     || natom->type == atom_type_function
-    || natom->type == atom_type_file
     || natom->type == atom_type_list)
         atomlist_push_front(GlobalAtomTableMutable, natom);
     else
@@ -753,37 +752,27 @@ Atom *atom_string_newcopy(const char *str) {
 #undef start_GlobalAtomTable_cashing
 #undef end_GlobalAtomTable_cashing
 
-Atom *atom_file_new(FILE *f) {
-    FileAtom *file_atom = mm_malloc("atom_file_new", sizeof *file_atom);
-    file_atom->file = f;
-
-    return atom_new(atom_type_file, file_atom);
-}
-
-Atom *atom_file_open(const char *filename) {
-    FILE *f = fopen(filename, "rb");
+Atom *atom_string_read_from_file(const char *file_name) {
+    FILE *f = fopen(file_name, "rb");
     if (!f)
-        return error_atom("atom_file_open; Could not open file `%s`.\n", filename), NULL;
-
-    return atom_file_new(f);
-}
-
-Atom *atom_file_read(Atom *file) {
-    if (!atom_is_of_type(file, atom_type_file))
-        return error_atom("atom_file_read: Expected file atom, got `%s`.\n", atom_repr(file)), NULL;
-
-    FileAtom *file_atom = file->atom;
-    FILE *f = file_atom->file;
+        return error_atom("atom_string_read_from_file: Could not open file `%s`.\n", file_name), NULL;
 
     fseek(f, 0, SEEK_END);
     int length = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    char *content = mm_malloc("atom_file_read", sizeof *content * (length + 1));
+    char *content = mm_malloc("atom_string_read_from_file", sizeof *content * (length+1));
     fread(content, sizeof *content, length, f);
     content[length] = '\0';
 
     return atom_string_new(content);
+}
+
+const char *atom_from_string(Atom *atom) {
+    if (!atom_string_is(atom))
+        return error_atom("atom_from_string: Given a non-string atom `%s`.\n", atom_repr(atom)), NULL;
+
+    return ((StringAtom *) atom->atom)->str;
 }
 
 Atom *atom_list_new(AtomList *list) {

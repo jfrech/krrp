@@ -55,61 +55,17 @@ static const char *atomlist_str(AtomList *lst) {
     "\n"), EXIT_SUCCESS
 
 int main(int argc, char **argv) {
+
     // memory initialization
     globaloptions_init();
     globalatomtable_init();
-    AtomList *al_sources = new_boxed_atomlist();
 
-    // arguments
-    bool test_mode = false;
-    {
-        if (argc < 1)
-            MAIN_ERR("Please specify a krrp source file. Use `-h` for help.\n");
-
-        bool interpret_arguments = true;
-
-        for (int j = 1; j < argc; j++) {
-            const char *arg = argv[j], *_arg = arg;
-
-            if (interpret_arguments && arg[0] == '-') {
-                if (arg[1] == '\0')
-                    MAIN_ERR("Unknown argument `%s`.\n", arg);
-
-                if (arg[1] == '-') {
-                    if (arg[2] == '\0')
-                        interpret_arguments = false;
-                    else if (strcmp(arg, "--help") == 0)
-                        PRINT_HELP;
-                    else if (strcmp(arg, "--test") == 0)
-                        test_mode = true;
-                    else
-                        MAIN_ERR("Unknown argument `%s`.\n", arg);
-                }
-                else {
-                    for (char cflg; (cflg = *++_arg); )
-                        if (cflg == 'h')
-                            PRINT_HELP;
-                        else if (cflg == 't')
-                            test_mode = true;
-                        else
-                            MAIN_ERR("Unknown character flag `-%c` in argument `%s`.\n", cflg, arg);
-                }
-            }
-            else {
-                atomlist_push(al_sources, atom_string_newfl(arg));
-                //if (filename == NULL)
-                //    filename = arg;
-                //else
-                //    MAIN_ERR("Cannot interpret two source files (`%s` and `%s`).\n", filename, arg);
-            }
-        }
-    }
+    // TODO
+    #include "krrp_argparse.h"
 
     // testing
-    if (test_mode) {
-        info("Testing ...\n");
-        test_all();
-    }
+    if (test_mode)
+        info("Testing ...\n"), test_all();
 
     // interpreting
     else {
@@ -117,21 +73,15 @@ int main(int argc, char **argv) {
             MAIN_ERR("Please specify a krrp source file.\n");
 
         while (!atomlist_empty(al_sources)) {
-            Atom *a_source = atomlist_pop_front(al_sources);
-            if (!atom_string_is(a_source))
-                MAIN_ERR("Invalid state.");
-            const char *filename = ((StringAtom *) a_source->atom)->str;
+            const char *file_name = atom_from_string(atomlist_pop_front(al_sources));
 
-            info("* Reading file `%s` ...\n", filename);
+            info("* Reading file `%s` ...\n", file_name);
 
-            // TODO :: Verification.
-            Atom *file_a = atom_file_open(filename);
-            Atom *source_a = atom_file_read(file_a);
+            Atom *source_a = atom_string_read_from_file(file_name);
             if (!atom_is_of_type(source_a, atom_type_string))
-                MAIN_ERR("Could not open krrp source file `%s`.\n", filename);
+                MAIN_ERR("Could not open krrp source file `%s`.\n", file_name);
             StringAtom *source_a_atom = source_a->atom;
             const char *source = source_a_atom->str;
-            mm_prematurely_free_mutable(file_a);
 
 
             print_escaped_source(source);
