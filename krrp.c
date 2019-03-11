@@ -29,6 +29,7 @@
 #include "test.h"
 #include "memorymanagement.h"
 
+#include "argparse.h"
 
 // TODO: Potentially make an AtomList into its own full atom.
 // TODO: Potentially implement AtomList as a doubly linked list.
@@ -61,10 +62,20 @@ int main(int argc, char **argv) {
     globalatomtable_init();
 
     // TODO
-    #include "krrp_argparse.h"
+    PArgs *pargs = mm_malloc("pargs", sizeof *pargs);
+    if (pargs == NULL)
+        MAIN_ERR("Could not allocate memory.");
+    pargs = parse_args(pargs, argc, argv);
+    bool print_help = pargs->print_help;
+    bool do_test = pargs->do_test;
+    AtomList *al_sources = pargs->sources;
+    mm_free("pargs", pargs);
+
+    if (print_help)
+        PRINT_HELP;
 
     // testing
-    if (test_mode)
+    if (do_test)
         info("Testing ...\n"), test_all();
 
     // interpreting
