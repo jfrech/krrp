@@ -61,56 +61,50 @@ int main(int argc, char **argv) {
     globaloptions_init();
     globalatomtable_init();
 
-    // TODO
-    PArgs *pargs = mm_malloc("pargs", sizeof *pargs);
-    if (pargs == NULL)
-        MAIN_ERR("Could not allocate memory.");
-    pargs = parse_args(pargs, argc, argv);
-    bool print_help = pargs->print_help;
-    bool do_test = pargs->do_test;
-    AtomList *al_sources = pargs->sources;
-    mm_free("pargs", pargs);
+    PArgs pargs = parse_args(argc, argv);
+    if (!pargs.parsing_successful)
+        MAIN_ERR("Unsuccessful argument parsing.\n");
 
-    if (print_help)
-        PRINT_HELP;
+    if (pargs.print_help)
+        PRINT_HELP; // TODO :: Remove `*** Error :: `.
 
-    // testing
-    if (do_test)
+    if (pargs.do_test) {
         info("Testing ...\n"), test_all();
-
-    // interpreting
-    else {
-        if (atomlist_empty(al_sources))
-            MAIN_ERR("Please specify a krrp source file.\n");
-
-        while (!atomlist_empty(al_sources)) {
-            const char *file_name = atom_from_string(atomlist_pop_front(al_sources));
-
-            info("* Reading file `%s` ...\n", file_name);
-
-            Atom *source_a = atom_string_read_from_file(file_name);
-            if (!atom_is_of_type(source_a, atom_type_string))
-                MAIN_ERR("Could not open krrp source file `%s`.\n", file_name);
-            StringAtom *source_a_atom = source_a->atom;
-            const char *source = source_a_atom->str;
-
-
-            print_escaped_source(source);
-
-            info("=== Parsing ===\n");
-            AtomList *parsed = parse(source);
-
-            if (parsed == NULL)
-                MAIN_ERR("Could not parse source.\n");
-
-            info(".> %s\n", atomlist_str(parsed));
-            info("=== Interpreting ===\n");
-            Atom *scope = main_scope();
-            while (!atomlist_empty(parsed))
-                printf("%s\n", atom_repr(interpret(0, parsed, scope, true)));
-        }
+        RETURN EXIT_SUCCESS;
     }
 
-    // memory destruction
+    if (atomlist_empty(pargs.sources))
+        MAIN_ERR("Please specify a krrp source file.\n");
+
+
+    // TODO
+    while (!atomlist_empty(pargs.sources)) {
+        const char *file_name = atom_from_string(atomlist_pop_front(pargs.sources));
+
+        info("* Reading file `%s` ...\n", file_name);
+
+        Atom *source_a = atom_string_read_from_file(file_name);
+        if (!atom_is_of_type(source_a, atom_type_string))
+            MAIN_ERR("Could not open krrp source file `%s`.\n", file_name);
+        StringAtom *source_a_atom = source_a->atom;
+        const char *source = source_a_atom->str;
+
+
+        print_escaped_source(source);
+
+        info("=== Parsing ===\n");
+        AtomList *parsed = parse(source);
+
+        if (parsed == NULL)
+            MAIN_ERR("Could not parse source.\n");
+
+        info(".> %s\n", atomlist_str(parsed));
+        info("=== Interpreting ===\n");
+        Atom *scope = main_scope();
+        while (!atomlist_empty(parsed))
+            printf("%s\n", atom_repr(interpret(0, parsed, scope, true)));
+    }
+
+
     RETURN EXIT_SUCCESS;
 }
