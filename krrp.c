@@ -46,8 +46,8 @@ static const char *atomlist_str(AtomList *lst) {
 #define RETURN return memorymanagement_free_all(),
 
 #define MAIN_ERR(...) return error(__VA_ARGS__), memorymanagement_free_all(), EXIT_FAILURE
-#define PRINT_HELP RETURN error(\
-    "\nABOUT\n"\
+#define PRINT_HELP RETURN fprintf(stderr,\
+    "ABOUT\n"\
     "   krrp by Jonathan Frech.\n"\
     "\n"\
     "USAGE\n"\
@@ -66,7 +66,14 @@ int main(int argc, char **argv) {
         MAIN_ERR("Unsuccessful argument parsing.\n");
 
     if (pargs.print_help)
-        PRINT_HELP; // TODO :: Remove `*** Error :: `.
+        RETURN fprintf(stderr,
+            "krrp by Jonathan Frech, 2018-2019.\n"
+            "Usage:\n"
+            "    krrp [options] [source files]\n"
+            "Options:\n"
+            "    -h, --help: Display this help message.\n"
+            "    -t, --test: Perform a self-test.\n"
+        ), EXIT_SUCCESS;
 
     if (pargs.do_test) {
         info("Testing ...\n"), test_all();

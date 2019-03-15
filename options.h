@@ -6,9 +6,8 @@
 
 typedef struct Options Options;
 
+// TODO
 struct Options {
-    bool verbose;
-    
     bool debug_address;
     bool debug_printGlobalAtomTable;
 
