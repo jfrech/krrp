@@ -762,8 +762,13 @@ Atom *atom_string_read_from_file(const char *file_name) {
     fseek(f, 0, SEEK_SET);
 
     char *content = mm_malloc("atom_string_read_from_file", sizeof *content * (length+1));
-    fread(content, sizeof *content, length, f);
+    bool success = fread(content, sizeof *content, length, f) == length;
     content[length] = '\0';
+
+    if (!success) {
+        mm_free("atom_string_read_from_file", content);
+        return error_atom("atom_string_read_from_file: Reading failed."), NULL;
+    }
 
     return atom_string_new(content);
 }

@@ -23,7 +23,7 @@
 <long_literal>         ::= "$" [0-9]+ "."
 <primitive>            ::= "," | ";" | "#!" | "#?" | "\\"
 <function_declaration> ::= "^" <name>* ":" <statement>+ "."
-<whitespace>           ::= " " | "\n" | "\r"
+<whitespace>           ::= " " | "\t" | "\n" | "\r"
 <comment>              ::= "~" [^\0\n]*
 <name>                 ::= [^\0]
 
@@ -295,7 +295,7 @@ static int _parse(const char *source, int p, AtomList *parsed, parse_state state
             p = parse_comment(source, p);
 
         // <whitespace>
-        else if (c == ' ' || c == '\n' || c == '\r')
+        else if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
             ;
 
         // <long_literal>
