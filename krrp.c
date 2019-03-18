@@ -71,8 +71,9 @@ int main(int argc, char **argv) {
             "Usage:\n"
             "    krrp [options] [source files]\n"
             "Options:\n"
-            "    -h, --help: Display this help message.\n"
-            "    -t, --test: Perform a self-test.\n"
+            "    -h, --help         : Display this help message.\n"
+            "    -t, --test         : Perform a self-test.\n"
+            "    -c, --code [source]: Execute given source.\n"
         ), EXIT_SUCCESS;
 
     if (pargs.do_test) {
@@ -81,32 +82,33 @@ int main(int argc, char **argv) {
         RETURN EXIT_SUCCESS;
     }
 
-    if (atomlist_empty(pargs.sources))
-        MAIN_ERR("Please specify a krrp source file.\n");
-
-
-    // TODO
+    // read `sources` into `code`
     while (!atomlist_empty(pargs.sources)) {
         const char *file_name = atom_from_string(atomlist_pop_front(pargs.sources));
-
         info("* Reading file `%s` ...\n", file_name);
-
         Atom *source_a = atom_string_read_from_file(file_name);
         if (!atom_is_of_type(source_a, atom_type_string))
             MAIN_ERR("Could not open krrp source file `%s`.\n", file_name);
-        StringAtom *source_a_atom = source_a->atom;
-        const char *source = source_a_atom->str;
+
+        atomlist_push(pargs.codes, source_a);
+    }
 
 
+    if (atomlist_empty(pargs.codes))
+        MAIN_ERR("Please specify a krrp source file or code piece.\n");
+
+    while (!atomlist_empty(pargs.codes)) {
+        const char *source = atom_from_string(atomlist_pop_front(pargs.codes));
+
+        info("=== Source ===\n");
         print_escaped_source(source);
 
         info("=== Parsing ===\n");
         AtomList *parsed = parse(source);
-
         if (parsed == NULL)
             MAIN_ERR("Could not parse source.\n");
+        info("    %s\n", atomlist_str(parsed));
 
-        info(".> %s\n", atomlist_str(parsed));
         info("=== Interpreting ===\n");
         Atom *scope = main_scope();
         while (!atomlist_empty(parsed))

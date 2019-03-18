@@ -9,6 +9,7 @@ struct PArgs {
     bool do_test;
     bool print_help;
     AtomList *sources;
+    AtomList *codes;
 };
 typedef struct PArgs PArgs;
 
