@@ -1,4 +1,4 @@
-CC = gcc
+CC = clang
 CFLAGS = -Wall -Wpedantic -O0
 
 SOURCES = $(wildcard *.c)

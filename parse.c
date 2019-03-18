@@ -3,7 +3,7 @@
 
 #include "parse.h"
 #include "atom.h"
-#include "error.h"
+#include "debug.h"
 #include "memorymanagement.h"
 
 /*** GRAMMAR ***
@@ -23,7 +23,7 @@
 <long_literal>         ::= "$" [0-9]+ "."
 <primitive>            ::= "," | ";" | "#!" | "#?" | "\\"
 <function_declaration> ::= "^" <name>* ":" <statement>+ "."
-<whitespace>           ::= " " | "\n"
+<whitespace>           ::= " " | "\n" | "\r"
 <comment>              ::= "~" [^\0\n]*
 <name>                 ::= [^\0]
 
@@ -295,7 +295,7 @@ static int _parse(const char *source, int p, AtomList *parsed, parse_state state
             p = parse_comment(source, p);
 
         // <whitespace>
-        else if (c == ' ' || c == '\n')
+        else if (c == ' ' || c == '\n' || c == '\r')
             ;
 
         // <long_literal>

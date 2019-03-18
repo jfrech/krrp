@@ -5,7 +5,7 @@
 
 #include "atom.h"
 #include "atomlist.h"
-#include "error.h"
+#include "debug.h"
 #include "util.h"
 #include "memorymanagement.h"
 
@@ -525,7 +525,7 @@ bool atom_scope_getflag_ismain(Atom *atom) {
     ScopeAtom *scope_atom = atom->atom;
 
     if (scope_atom->is_frozen)
-        return error_atom("atom_scope_getflag_ismain: Scope is frozen.\n");
+        return error_atom("atom_scope_getflag_ismain: Scope is frozen.\n"), false;
 
     return scope_atom->is_main;
 }
@@ -549,7 +549,7 @@ bool atom_scope_getflag_isselfref(Atom *atom) {
     ScopeAtom *scope_atom = atom->atom;
 
     if (scope_atom->is_frozen)
-        return error_atom("atom_scope_getflag_isselfref: Scope is frozen.\n");
+        return error_atom("atom_scope_getflag_isselfref: Scope is frozen.\n"), false;
 
     return scope_atom->is_selfref;
 }

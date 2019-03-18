@@ -3,7 +3,7 @@
 #include "parse.h"
 #include "interpret.h"
 #include "memorymanagement.h"
-#include "error.h"
+#include "debug.h"
 
 #include <stdlib.h>
 #include <stdio.h>

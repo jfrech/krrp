@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include "atom.h"
-#include "error.h"
+#include "debug.h"
 #include "interpret.h"
 #include "util.h"
 #include "options.h"

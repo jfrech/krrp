@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "error.h"
+#include "debug.h"
 #include "options.h"
 #include "memorymanagement.h"
 extern Options *GlobalOptions;

@@ -18,7 +18,7 @@
 #include "parse.h"
 #include "interpret.h"
 #include "options.h"
-#include "error.h"
+#include "debug.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -35,12 +35,12 @@
 // TODO: Potentially implement AtomList as a doubly linked list.
 // TODO: Potentially implement own special color markup.
 
-
 // TODO
 static const char *atomlist_str(AtomList *lst) {
     StringAtom *string_atom = atomlist_representation(lst)->atom;
     return string_atom->str;
 }
+
 
 // memory-management-aware return
 #define RETURN return memorymanagement_free_all(),
@@ -76,7 +76,8 @@ int main(int argc, char **argv) {
         ), EXIT_SUCCESS;
 
     if (pargs.do_test) {
-        info("Testing ...\n"), test_all();
+        info("Testing ...\n");
+        test_all();
         RETURN EXIT_SUCCESS;
     }
 

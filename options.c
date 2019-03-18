@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "error.h"
 #include "options.h"
 #include "memorymanagement.h"
 

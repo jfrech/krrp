@@ -5,7 +5,7 @@
 
 #include "atom.h"
 #include "options.h"
-#include "error.h"
+#include "debug.h"
 
 
 extern Options* GlobalOptions;

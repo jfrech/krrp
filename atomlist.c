@@ -1,6 +1,6 @@
 #include "atomlist.h"
 #include "atom.h"
-#include "error.h"
+#include "debug.h"
 #include "memorymanagement.h"
 
 
