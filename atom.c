@@ -773,9 +773,9 @@ Atom *atom_string_read_from_file(const char *file_name) {
     return atom_string_new(content);
 }
 
-const char *atom_from_string(Atom *atom) {
+const char *string_from_atom(Atom *atom) {
     if (!atom_string_is(atom))
-        return error_atom("atom_from_string: Given a non-string atom `%s`.\n", atom_repr(atom)), NULL;
+        return error_atom("string_from_atom: Given a non-string atom `%s`.\n", atom_repr(atom)), NULL;
 
     return ((StringAtom *) atom->atom)->str;
 }

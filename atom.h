@@ -97,7 +97,7 @@ Atom *atom_string_fromchar(char c);
 Atom *atom_string_newfl(const char *str);
 Atom *atom_string_newcopy(const char *str);
 Atom *atom_string_read_from_file(const char *file_name);
-const char *atom_from_string(Atom *atom);
+const char *string_from_atom(Atom *atom);
 
 struct ListAtom { AtomList *list; };
 Atom *atom_list_new(AtomList *list);
