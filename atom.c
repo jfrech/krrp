@@ -9,9 +9,6 @@
 #include "util.h"
 #include "memorymanagement.h"
 
-#include "options.h"
-extern Options *GlobalOptions;
-
 
 /*** GlobalAtomTable ***/
 /*
@@ -489,10 +486,9 @@ bool atom_scope_is(Atom *atom) {
     if (!atom_is_of_type(atom, atom_type_scope))
         return false;
 
-    if (!GlobalOptions)
-        return error_atom("atom_scope_is: Cannot read global options.\n"), false;
+    bool PEDANTIC = false; // TODO
 
-    if (GlobalOptions->pedantic_scope_verification) {
+    if (PEDANTIC) {
         ScopeAtom *scope_atom = atom->atom;
 
         if (!atomlist_is(scope_atom->names) || !atomlist_purely(scope_atom->names, atom_type_name) || !atomlist_is(scope_atom->binds))

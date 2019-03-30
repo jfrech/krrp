@@ -4,11 +4,9 @@
 #include <stdio.h>
 
 #include "atom.h"
-#include "options.h"
 #include "debug.h"
 
 
-extern Options* GlobalOptions;
 extern AtomList* GlobalAtomTable;
 extern AtomList* GlobalAtomTableMutable;
 
@@ -74,9 +72,6 @@ static void memorymanagement_FATAL_ERROR(const char *msg) {
 
 
 void memorymanagement_free_all() {
-    if (GlobalOptions)
-        mm_free("GlobalOptions", GlobalOptions);
-
     if (GlobalAtomTable)
         mm_free_gat(GlobalAtomTable);
 

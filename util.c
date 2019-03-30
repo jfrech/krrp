@@ -3,9 +3,7 @@
 #include <string.h>
 
 #include "debug.h"
-#include "options.h"
 #include "memorymanagement.h"
-extern Options *GlobalOptions;
 
 char *strdup(const char *str) {
     char *dup = mm_malloc("strdup", (strlen(str)+1) * sizeof *dup);

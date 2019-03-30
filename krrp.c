@@ -4,7 +4,6 @@
 #include "atom.h"
 #include "parse.h"
 #include "interpret.h"
-#include "options.h"
 #include "debug.h"
 
 #include <stdlib.h>
@@ -35,7 +34,6 @@
 int main(int argc, char **argv) {
 
     // memory initialization
-    globaloptions_init();
     globalatomtable_init();
 
     PArgs pargs = parse_args(argc, argv);

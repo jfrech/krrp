@@ -7,19 +7,18 @@
 #include "debug.h"
 #include "interpret.h"
 #include "util.h"
-#include "options.h"
 #include "memorymanagement.h"
 
 #include "parse.h" // TODO?
 
-extern Options *GlobalOptions;
+#include "Opt.h"
+extern Opt GlobOpt;
 
 #define ASSERT(cnd, ...) { if (!(cnd)) return error("interpret :: " __VA_ARGS__), atom_Enull_new(); }
 
 
 Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active) {
-    ASSERT(GlobalOptions, "interpret: Cannot access global options.\n")
-    ASSERT(recursion_depth < GlobalOptions->maximum_interpretation_recursion_depth,
+    ASSERT(recursion_depth < GlobOpt.maximum_interpretation_recursion_depth,
         "interpret: Maximum interpretation iterations reached.\n")
     ASSERT(atomlist_is(atoms), "interpret: Given invalid atoms AtomList.\n");
     ASSERT(atom_scope_is(scope), "interpret: Given invalid scope ScopeAtom.\n");
