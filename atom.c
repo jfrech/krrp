@@ -16,7 +16,7 @@ extern Options *GlobalOptions;
 /*** GlobalAtomTable ***/
 /*
 The global atom table retains a pointer to every atom in use.
-This allows for both atom caching (only applicable to immutable atoms;
+This allows for both atom anti-aliasing (only applicable to immutable atoms;
 atoms like scopes or functions are mutable) and eventual leakless atom mm_freeing.
 */
 AtomList *GlobalAtomTable;
@@ -72,7 +72,7 @@ bool atom_is(Atom *atom) {
 }
 
 bool atom_equal(Atom *atomA, Atom *atomB) {
-    /* Due to the GlobalAtomTable, equivalent atoms are cached and thereby
+    /* Due to the GlobalAtomTable, equivalent atoms are anti-aliased and thereby
     equal to one another iff their pointers are. */
     return atomA == atomB;
 }
@@ -246,11 +246,11 @@ Atom *atom_representation(Atom *atom) {
 }
 
 
-// start_GlobalAtomTable_cashing ... end_GlobalAtomTable_cashing
-#define start_GlobalAtomTable_cashing { \
+// start_GlobalAtomTable_antialiasing ... end_GlobalAtomTable_antialiasing
+#define start_GlobalAtomTable_antialiasing { \
     AtomListNode *node = GlobalAtomTable->head; \
     while (node) { Atom *atom = node->atom;
-#define end_GlobalAtomTable_cashing node = node->next; } }
+#define end_GlobalAtomTable_antialiasing node = node->next; } }
 
 
 bool atom_is_of_type(Atom *atom, atom_type type) {
@@ -282,7 +282,7 @@ MAKE__ATOM_NULLX(Enull, ENull)
 
 
 Atom *atom_name_new(char *name) {
-    start_GlobalAtomTable_cashing
+    start_GlobalAtomTable_antialiasing
         if (atom_name_is(atom)) {
             NameAtom *name_atom = atom->atom;
             if (strcmp(name_atom->name, name) == 0) {
@@ -290,7 +290,7 @@ Atom *atom_name_new(char *name) {
                 return atom;
             }
         }
-    end_GlobalAtomTable_cashing
+    end_GlobalAtomTable_antialiasing
 
 
     NameAtom *name_atom = mm_malloc("atom_name_new", sizeof *name_atom);
@@ -305,14 +305,14 @@ bool atom_name_is(Atom *atom) {
 
 
 Atom *atom_integer_new(integer value) {
-    start_GlobalAtomTable_cashing
+    start_GlobalAtomTable_antialiasing
         if (atom_integer_is(atom)) {
             IntegerAtom *integer_atom = atom->atom;
             if (integer_atom->value == value)
                 /* no mm_freeing required */
                 return atom;
         }
-    end_GlobalAtomTable_cashing
+    end_GlobalAtomTable_antialiasing
 
 
     IntegerAtom *integer_atom = mm_malloc("atom_integer_new", sizeof *integer_atom);
@@ -327,14 +327,14 @@ bool atom_integer_is(Atom *atom) {
 
 
 Atom *atom_primitive_new(char c) {
-    start_GlobalAtomTable_cashing
+    start_GlobalAtomTable_antialiasing
         if (atom_primitive_is(atom)) {
             PrimitiveAtom *primitive_atom = atom->atom;
             if (primitive_atom->c == c)
                 /* no mm_freeing required */
                 return atom;
         }
-    end_GlobalAtomTable_cashing
+    end_GlobalAtomTable_antialiasing
 
 
     PrimitiveAtom *primitive_atom = mm_malloc("atom_primitive_new", sizeof *primitive_atom);
@@ -349,7 +349,7 @@ bool atom_primitive_is(Atom *atom) {
 
 
 Atom *atom_functiondeclaration_new(int arity, AtomList *parameters, AtomList *body) {
-    /*start_GlobalAtomTable_cashing
+    /*start_GlobalAtomTable_antialiasing
         if (atom_functiondeclaration_is(atom)) {
             FunctionDeclarationAtom *functiondeclaration_atom = atom->atom;
             if (functiondeclaration_atom->arity == arity
@@ -357,7 +357,7 @@ Atom *atom_functiondeclaration_new(int arity, AtomList *parameters, AtomList *bo
             && atomlist_equal(functiondeclaration_atom->body, body))
                 return atom;
         }
-    end_GlobalAtomTable_cashing TODO*/
+    end_GlobalAtomTable_antialiasing TODO*/
 
     if (!atomlist_is(parameters)
     || !atomlist_purely(parameters, atom_type_name)
@@ -433,7 +433,7 @@ bool atom_function_is(Atom *atom) {
 }
 
 Atom *atom_scope_new(AtomList *names, AtomList *binds, Atom *upper_scope) {
-    /* Scope atoms are mutable and therefor shall not be cached. */
+    /* Scope atoms are mutable and therefor shall not be anti-aliased. */
 
     if (!atomlist_is(names) || !atomlist_purely(names, atom_type_name))
         return error_atom("atom_scope_new: Given invalid names AtomList (or one which conatins non-NameAtom elements).\n"), NULL;
@@ -465,7 +465,7 @@ Atom *atom_scope_freeze(Atom *scope) {
 
     atomlist_remove_by_pointer(GlobalAtomTableMutable, scope);
 
-    start_GlobalAtomTable_cashing
+    start_GlobalAtomTable_antialiasing
         if (atom_scope_is(atom)) {
             ScopeAtom *scope_atom = atom->atom;
             if (scope_atom->is_frozen
@@ -474,7 +474,7 @@ Atom *atom_scope_freeze(Atom *scope) {
             && atom_equal(scope_atom->upper_scope, original_scope_atom->upper_scope))
                 return atom_free(scope), atom;
         }
-    end_GlobalAtomTable_cashing
+    end_GlobalAtomTable_antialiasing
 
 
     atomlist_push_front(GlobalAtomTable, scope);
@@ -611,14 +611,14 @@ Atom *atom_scope_new_fake(Atom *scope) { return atom_scope_new(atomlist_new(NULL
 Atom *atom_scope_new_inherits(Atom *scope) { return atom_scope_new(atomlist_new(NULL), atomlist_new(NULL), scope); }
 
 Atom *atom_structinitializer_new(Atom *type, AtomList *fields) {
-    start_GlobalAtomTable_cashing
+    start_GlobalAtomTable_antialiasing
         if (atom_structinitializer_is(atom)) {
             StructInitializerAtom *structinitializer_atom = atom->atom;
             if (atom_equal(structinitializer_atom->type, type)
             && atomlist_equal(structinitializer_atom->fields, fields))
                 return atomlist_free(fields), atom;
         }
-    end_GlobalAtomTable_cashing
+    end_GlobalAtomTable_antialiasing
 
 
     if (!atom_is(type) || !fields)
@@ -648,14 +648,14 @@ bool atom_structinitializer_is(Atom *atom) {
 }
 
 Atom *atom_struct_new(Atom *type, Atom *scope) {
-    start_GlobalAtomTable_cashing
+    start_GlobalAtomTable_antialiasing
         if (atom_struct_is(atom)) {
             StructAtom *struct_atom = atom->atom;
             if (atom_equal(type, struct_atom->type)
             && atom_equal(scope, struct_atom->scope))
                 return atom;
         }
-    end_GlobalAtomTable_cashing
+    end_GlobalAtomTable_antialiasing
 
 
     if (!atom_name_is(type))
@@ -682,13 +682,13 @@ bool atom_struct_is(Atom *atom) {
 }
 
 Atom *atom_string_new(char *str) {
-    start_GlobalAtomTable_cashing
+    start_GlobalAtomTable_antialiasing
         if (atom_string_is(atom)) {
             StringAtom *string_atom = atom->atom;
             if (strcmp(string_atom->str, str) == 0)
                 return mm_free("atom_string_new", str), atom;
         }
-    end_GlobalAtomTable_cashing
+    end_GlobalAtomTable_antialiasing
 
 
     StringAtom *string_atom = mm_malloc("atom_string_new", sizeof *string_atom);
@@ -749,8 +749,8 @@ Atom *atom_string_newcopy(const char *str) {
     return atom_string_newfl(str);
 }
 
-#undef start_GlobalAtomTable_cashing
-#undef end_GlobalAtomTable_cashing
+#undef start_GlobalAtomTable_antialiasing
+#undef end_GlobalAtomTable_antialiasing
 
 Atom *atom_string_read_from_file(const char *file_name) {
     FILE *f = fopen(file_name, "rb");
