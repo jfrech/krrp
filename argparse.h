@@ -12,6 +12,8 @@ struct PArgs {
     bool print_help;
     AtomList *sources;
     AtomList *codes;
+
+    int err, wrn, inf;
 };
 typedef struct PArgs PArgs;
 

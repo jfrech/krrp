@@ -301,33 +301,33 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 }
 
                 // import
-                /*
-                    Before  : _ << parent_scope << scope <<|
-                    Imported: _ << imported_scope <<|
-                    After   : parent_scope << imported_scope << scope <<|
-                */
                 else if (c == '\\') {
                     Atom *import_name = atomlist_pop_front(atoms);
                     ASSERT(atom_name_is(import_name), "interpret: Import needs NameAtom, got %s.\n", atom_repr(import_name))
 
-                    const char *import_source = "!j^n:?n*n@-n11."; // TODO :: File reading.
+                    const char *import_source = "!j^n:?n*n@-n11."; // TODO XXX :: File reading.
                     AtomList *import_parsed = parse(import_source);
                     atomlist_push(import_parsed, atom_primitive_new('S'));
 
-                    // TODO :: Proper `interpret_entry(AtomList *atoms);`
-                    Atom *imported_scope = interpret(0, import_parsed, main_scope(), true);
+                    Atom *raw_imported_scope, *import_main_scope = main_scope();
+                    while (!atomlist_empty(import_parsed))
+                        raw_imported_scope = interpret(0, import_parsed, import_main_scope, true);
 
-                    atomlist_free(import_parsed);
+                    ScopeAtom *raw_imported_scope_atom = raw_imported_scope->atom;
+                    AtomList *names = raw_imported_scope_atom->names;
+                    Atom *imported_scope = atom_scope_new_empty();
+                    AtomListNode *name_node = names->head;
+                    while (name_node) {
+                        Atom *name = name_node->atom;
 
-                    //Atom *imported_scope = atom_scope_new_empty();
+                        atom_scope_push(imported_scope, name, atom_scope_unbind(raw_imported_scope, name));
+
+                        name_node = name_node->next;
+                    }
+
                     ScopeAtom *imported_scope_atom = imported_scope->atom;
-                    //atom_scope_push(imported_scope, atom_name_new(strdup("I")), atom_integer_new(-5));
-
-                    ScopeAtom *scope_atom = scope->atom;
-
-                    Atom *parent_scope = scope_atom->upper_scope;
-                    scope_atom->upper_scope = imported_scope;
-                    imported_scope_atom->upper_scope = parent_scope;
+                    imported_scope_atom->upper_scope = scope;
+                    scope = imported_scope;
                 }
 
                 // only used internally; returns the current scope

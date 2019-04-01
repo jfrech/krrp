@@ -25,7 +25,11 @@ PArgs parse_args(int argc, char **argv) {
         .do_test = false,
         .print_help = false,
         .sources = new_boxed_atomlist(),
-        .codes = new_boxed_atomlist()
+        .codes = new_boxed_atomlist(),
+
+        .err = 0,
+        .wrn = 0,
+        .inf = 0
     };
 
     bool interpret_arguments = true;
@@ -45,6 +49,13 @@ PArgs parse_args(int argc, char **argv) {
                 else if (strcmp(arg, "--help") == 0) { ARG_HELP }
                 else if (strcmp(arg, "--test") == 0) { ARG_TEST }
                 else if (strcmp(arg, "--code") == 0) { ARG_CODE }
+
+                else if (strcmp(arg, "--error") == 0) pargs.err = 1;
+                else if (strcmp(arg, "--warning") == 0) pargs.wrn = 1;
+                else if (strcmp(arg, "--info") == 0) printf("hm."),pargs.inf = 1;
+                else if (strcmp(arg, "--noerror") == 0) pargs.err = -1;
+                else if (strcmp(arg, "--nowarning") == 0) pargs.wrn = -1;
+                else if (strcmp(arg, "--noinfo") == 0) pargs.inf = -1;
 
                 else
                     ERR("Unknown argument `%s`.\n", arg);

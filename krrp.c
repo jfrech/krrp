@@ -17,6 +17,8 @@
 
 #include "argparse.h"
 
+#include "Opt.h"
+extern Opt GlobOpt;
 
 // memory-management-aware return
 #define RETURN return memorymanagement_free_all(),
@@ -40,9 +42,17 @@ int main(int argc, char **argv) {
     if (!pargs.parsing_successful)
         MAIN_ERR("Unsuccessful argument parsing.\n");
 
+    if (pargs.err < 0) GlobOpt.ERR = false;
+    if (pargs.wrn < 0) GlobOpt.WRN = false;
+    if (pargs.inf < 0) GlobOpt.INF = false;
+    if (pargs.err > 0) GlobOpt.ERR = true;
+    if (pargs.wrn > 0) GlobOpt.WRN = true;
+    if (pargs.inf > 0) GlobOpt.INF = true;
+
     if (pargs.print_help)
         RETURN fprintf(stderr,
             "krrp by Jonathan Frech, 2018-2019.\n"
+            "\n"
             "Usage:\n"
             "    krrp [options] [source files]\n"
             "Options:\n"
@@ -54,6 +64,7 @@ int main(int argc, char **argv) {
     if (pargs.do_test) {
         info("Testing ...\n");
         test_all();
+        
         RETURN EXIT_SUCCESS;
     }
 
