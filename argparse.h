@@ -1,7 +1,9 @@
 #ifndef ARGPARSE_H
 #define ARGPARSE_H
 
+
 #include "atomlist.h"
+
 
 struct PArgs {
     bool parsing_successful;
@@ -14,5 +16,6 @@ struct PArgs {
 typedef struct PArgs PArgs;
 
 PArgs parse_args(int argc, char **argv);
+
 
 #endif

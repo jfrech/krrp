@@ -10,16 +10,16 @@
 #include "memorymanagement.h"
 
 
-/*** GlobalAtomTable ***/
-/*
-The global atom table retains a pointer to every atom in use.
-This allows for both atom anti-aliasing (only applicable to immutable atoms;
-atoms like scopes or functions are mutable) and eventual leakless atom mm_freeing.
+/* GlobalAtomTable
+
+    The global atom table retains a pointer to every atom in use.
+    It allows for both atom anti-aliasing (only applicable to immutable atoms;
+    mutable atoms cannot be anti-aliased) and eventual leakless freeing of all atoms.
 */
+
 AtomList *GlobalAtomTable;
 AtomList *GlobalAtomTableMutable;
 Atom *GlobalNullAtom, *GlobalNullConditionAtom, *GlobalNullScopeAtom, *GlobalENullAtom;
-
 
 void globalatomtable_init() {
     GlobalAtomTable = atomlist_new(NULL);
@@ -70,17 +70,18 @@ bool atom_is(Atom *atom) {
 
 bool atom_equal(Atom *atomA, Atom *atomB) {
     /* Due to the GlobalAtomTable, equivalent atoms are anti-aliased and thereby
-    equal to one another iff their pointers are. */
+    equal to one another iff their pointers are; identity and equivalence are
+    indistinguishable. */
     return atomA == atomB;
 }
+
 
 const char *atom_repr(Atom *atom) {
     StringAtom *string_atom = atom_representation(atom)->atom;
     return string_atom->str;
 }
 
-// TODO
-static Atom *atom_struct_helper_repr(Atom *scope) {
+static Atom *atom_struct_representation(Atom *scope) {
     Atom *repr = atom_string_newfl("");
     ScopeAtom *scope_atom = scope->atom;
     AtomListNode *noden = scope_atom->names->head;
@@ -88,7 +89,6 @@ static Atom *atom_struct_helper_repr(Atom *scope) {
     while (noden && nodeb) {
         repr = atom_string_concat(
             repr,
-            //atom_representation(noden->atom),
             atom_representation(nodeb->atom)
         );
         noden = noden->next;
@@ -215,19 +215,9 @@ Atom *atom_representation(Atom *atom) {
 
     else if (atom->type == atom_type_struct) {
         StructAtom *struct_atom = atom->atom;
-
-        //TODO
         return atom_string_concat(
             atom_representation(struct_atom->type),
-            atom_struct_helper_repr(struct_atom->scope)
-        );
-
-        return atom_string_concat5(
-            atom_string_newfl("Struct("),
-            atom_representation(struct_atom->type),
-            atom_string_newfl(", "),
-            atom_representation(struct_atom->scope),
-            atom_string_newfl(")")
+            atom_struct_representation(struct_atom->scope)
         );
     }
 
