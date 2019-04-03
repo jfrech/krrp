@@ -20,12 +20,16 @@
 AtomList *GlobalAtomTable;
 AtomList *GlobalAtomTableMutable;
 Atom *GlobalNullAtom, *GlobalNullConditionAtom, *GlobalNullScopeAtom, *GlobalENullAtom;
+Atom *ImportedSource;
 
 void globalatomtable_init() {
     GlobalAtomTable = atomlist_new(NULL);
     GlobalAtomTableMutable = atomlist_new(NULL);
 
     GlobalNullAtom = GlobalNullConditionAtom = GlobalNullScopeAtom = NULL;
+    ImportedSource = atom_scope_new_empty();
+
+    atom_scope_push(ImportedSource, atom_name_new(strdup("L")), atom_string_newfl("!f^n:*nn."));
 }
 
 
@@ -570,7 +574,7 @@ bool atom_scope_push(Atom *scope, Atom *name, Atom *bind) {
 
 Atom *atom_scope_unbind(Atom *scope, Atom *name) {
     if (!atom_scope_is(scope) || !atom_name_is(name))
-        return error("atom_scope_unbind: Given invalid scope ScopeAtom and/or name NameAtom."), NULL;
+        return error_atom("atom_scope_unbind: Given invalid scope ScopeAtom and/or name NameAtom.\n"), NULL;
 
     ScopeAtom *scope_atom = scope->atom;
     AtomListNode *names_node = scope_atom->names->head;
@@ -591,6 +595,22 @@ Atom *atom_scope_unbind(Atom *scope, Atom *name) {
 
     /* Perfect use of tail recursion! */
     return atom_scope_unbind(scope_atom->upper_scope, name);
+}
+
+bool atom_scope_contains_bind(Atom *scope, Atom *name) {
+    if (!atom_scope_is(scope) || !atom_name_is(name))
+        return error_atom("atom_scope_contains_bind: Expected scope and name.\n"), false;
+
+    ScopeAtom *scope_atom = scope->atom;
+    AtomListNode *names_node = scope_atom->names->head;
+    while (names_node) {
+        if (atom_equal(names_node->atom, name))
+            return true;
+
+        names_node = names_node->next;
+    }
+
+    return false;
 }
 
 Atom *atom_scope_new_fake(Atom *scope) { return atom_scope_new(atomlist_new(NULL), atomlist_new(NULL), scope); }
@@ -760,10 +780,13 @@ Atom *atom_string_read_from_file(const char *file_name) {
 }
 
 const char *string_from_atom(Atom *atom) {
-    if (!atom_string_is(atom))
-        return error_atom("string_from_atom: Given a non-string atom `%s`.\n", atom_repr(atom)), NULL;
+    if (atom_string_is(atom))
+        return ((StringAtom *) atom->atom)->str;
 
-    return ((StringAtom *) atom->atom)->str;
+    if (atom_name_is(atom))
+        return ((NameAtom *) atom->atom)->name;
+
+    return error_atom("string_from_atom: Given an invalid atom `%s`.\n", atom_repr(atom)), NULL;
 }
 
 Atom *atom_list_new(AtomList *list) {

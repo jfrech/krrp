@@ -70,6 +70,7 @@ bool atom_scope_getflag_isselfref(Atom *atom);
 
 bool atom_scope_push(Atom *scope, Atom *name, Atom *bind);
 Atom *atom_scope_unbind(Atom *scope, Atom *name);
+bool atom_scope_contains_bind(Atom *scope, Atom *name);
 Atom *atom_scope_new_inherits(Atom *scope);
 Atom *atom_scope_new_fake(Atom *scope);
 

@@ -14,6 +14,8 @@
 #include "Opt.h"
 extern Opt GlobOpt;
 
+extern Atom *ImportedSource;
+
 #define ASSERT(cnd, ...) { if (!(cnd)) return error("interpret :: " __VA_ARGS__), atom_Enull_new(); }
 
 
@@ -305,22 +307,27 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                     Atom *import_name = atomlist_pop_front(atoms);
                     ASSERT(atom_name_is(import_name), "interpret: Import needs NameAtom, got %s.\n", atom_repr(import_name))
 
-                    const char *import_source = "!j^n:?n*n@-n11."; // TODO XXX :: File reading.
+                    if (!atom_scope_contains_bind(ImportedSource, import_name)) {
+                        Atom *import_contents = atom_string_read_from_file(string_from_atom(import_name));
+                        ASSERT(atom_string_is(import_contents), "interpret: Import failed.\n")
+                        atom_scope_push(ImportedSource, import_name, import_contents);
+                    }
+                    const char *import_source = string_from_atom(atom_scope_unbind(ImportedSource, import_name));
+
                     AtomList *import_parsed = parse(import_source);
-                    atomlist_push(import_parsed, atom_primitive_new('S'));
 
-                    Atom *raw_imported_scope, *import_main_scope = main_scope();
+                    Atom *import_main_scope = main_scope();
                     while (!atomlist_empty(import_parsed))
-                        raw_imported_scope = interpret(0, import_parsed, import_main_scope, true);
+                        interpret(0, import_parsed, import_main_scope, true);
 
-                    ScopeAtom *raw_imported_scope_atom = raw_imported_scope->atom;
-                    AtomList *names = raw_imported_scope_atom->names;
+                    ScopeAtom *import_main_scope_atom = import_main_scope->atom;
+                    AtomList *names = import_main_scope_atom->names;
                     Atom *imported_scope = atom_scope_new_empty();
                     AtomListNode *name_node = names->head;
                     while (name_node) {
                         Atom *name = name_node->atom;
 
-                        atom_scope_push(imported_scope, name, atom_scope_unbind(raw_imported_scope, name));
+                        atom_scope_push(imported_scope, name, atom_scope_unbind(import_main_scope, name));
 
                         name_node = name_node->next;
                     }
@@ -329,10 +336,6 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                     imported_scope_atom->upper_scope = scope;
                     scope = imported_scope;
                 }
-
-                // only used internally; returns the current scope
-                else if (c == 'S')
-                    return scope;
 
                 else
                     ASSERT(false, "interpret: Unknown primitive `%s`.\n", atom_repr(atom))
@@ -352,7 +355,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
         ASSERT(false, "interpret: Invalid state.\n")
     }
 
-    ASSERT(false, "Fell through (active = %s).\n", active ? "true" : "false")
+    return info("Fell through (active = %s).\n", active ? "true" : "false"), atom_null_new();
 }
 
 
