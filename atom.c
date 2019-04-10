@@ -29,7 +29,7 @@ void globalatomtable_init() {
     GlobalNullAtom = GlobalNullConditionAtom = GlobalNullScopeAtom = NULL;
     ImportedSource = atom_scope_new_empty();
 
-    atom_scope_push(ImportedSource, atom_name_new(strdup("L")), atom_string_newfl("!f^n:*nn."));
+    #include "stdlib/krrp_stdlib.c"
 }
 
 

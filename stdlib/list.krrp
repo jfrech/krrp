@@ -10,6 +10,8 @@
 
 !P#Pxy.
 
+~ TODO :: Write the above implementation's modules.
+
 ![null]^l:#?El.
 ![head]^l:#!fl.
 ![tail]^l:#!rl.
@@ -45,15 +47,3 @@
 ![elem]^el:[any]^x:=ex.l.
 ![nub]^l:[foldl]^ae:?[elem]eaa[append]aLeE.El.
 ![without]^lm:[filter]^x:[!][elem]xm.l.
-
-
-!lL1L2L3L$0.E
-
-[zip][tail]ll
-[zip]l[tail]l
-
-[without]lL1L2L1E
-[all]^_:1.l
-
-
-0 ~ TODO
