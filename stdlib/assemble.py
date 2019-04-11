@@ -2,7 +2,8 @@ import os
 
 
 module_name_aliases = {
-    'list': ('L',)
+    'list': ('L',),
+    'pair': ('P',),
 }
 
 
@@ -20,10 +21,7 @@ with open(stdlib + '/krrp_stdlib.c', 'w') as krrp_stdlib:
         if extension == '.krrp':
             with open(full_file_name, 'r') as f:
                 module_content = f.read()
+                names = (module_name, ) + module_name_aliases.get(module_name, ())
 
-                module_loader = lambda name: template % (c_escape(name), c_escape(module_content)) + '\n'
-
-                krrp_stdlib.write(module_loader(module_name))
-                if module_name in module_name_aliases:
-                    for alias in module_name_aliases[module_name]:
-                        krrp_stdlib.write(module_loader(alias))
+                for name in names:
+                    krrp_stdlib.write(template % (c_escape(name), c_escape(module_content)) + '\n')
