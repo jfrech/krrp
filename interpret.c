@@ -314,55 +314,20 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                     }
                     const char *import_source = string_from_atom(atom_scope_unbind(ImportedSource, import_name));
 
+
                     AtomList *import_parsed = parse(import_source);
-                    atomlist_push(import_parsed, atom_primitive_new('S'));
-
-                    Atom *import_main_scope = main_scope(), *import_scope = atom_scope_new_empty();
+                    Atom *import_scope = main_scope();
                     while (!atomlist_empty(import_parsed))
-                        import_scope = interpret(0, import_parsed, import_main_scope, true);
+                        interpret(0, import_parsed, import_scope, true);
 
-                    ASSERT(atom_scope_is(import_scope), "interpret: Could not retrieve import scope (%s).\n", atom_repr(import_scope))
-
-                    /*
-                    ScopeAtom *import_main_scope_atom = import_main_scope->atom;
-                    AtomList *names = import_main_scope_atom->names;
-                    Atom *imported_scope = atom_scope_new_empty();
-                    AtomListNode *name_node = names->head;
+                    AtomListNode *name_node = ((ScopeAtom *) import_scope->atom)->names->head;
                     while (name_node) {
                         Atom *name = name_node->atom;
-
-                        atom_scope_push(imported_scope, name, atom_scope_unbind(import_main_scope, name));
-
+                        if (!atom_scope_contains_bind(scope, name))
+                            atom_scope_push(scope, name, atom_scope_unbind(import_scope, name));
                         name_node = name_node->next;
                     }
-
-                    ScopeAtom *imported_scope_atom = imported_scope->atom;
-                    imported_scope_atom->upper_scope = scope;
-                    scope = imported_scope;
-                    */
-
-                    //Atom *new_scope = atom_scope_new(atomlist_new(NULL), atomlist_new(NULL), scope);
-
-
-                    //while (!atom_nullscope_is(import_scope)) {
-                        AtomListNode *name_node = ((ScopeAtom *) import_scope->atom)->names->head;
-                        while (name_node) {
-                            Atom *name = name_node->atom;
-                            if (!atom_scope_contains_bind(scope, name))
-                                atom_scope_push(scope, name, atom_scope_unbind(import_scope, name));
-                            name_node = name_node->next;
-                        }
-
-                        //import_scope = ((ScopeAtom *) import_scope->atom)->upper_scope;
-                    //}
-
-
-                    //scope = new_scope;
                 }
-
-                // only used internally; returns the current scope
-                else if (c == 'S')
-                    return scope;
 
                 else
                     ASSERT(false, "interpret: Unknown primitive `%s`.\n", atom_repr(atom))
