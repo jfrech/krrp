@@ -1,16 +1,6 @@
-![flip]^f:^xy:fyx..
-![id]^x:x.
-
-![!]^b:?b01.
-![>=]^xy:[!][<]xy.
-![<=]^xy:[!][>]xy.
-
-
+\F\P\T
 !L#Lfr. !E#E.
 
-\P
-
-~ TODO :: Write the above implementation's modules.
 
 ![null]^l:#?El.
 ![head]^l:#!fl.
@@ -37,7 +27,7 @@
 ![drop]^nl:[reverse][take]-[length]ln[reverse]l.
 ![index]^nl:#!f[drop]nl.
 
-![zip]^lm:[foldl]^ae:[append]a?[longer]maLPe[index][length]amEE.El.
+![zip]^lm:[foldl]^ae:[append]a?[longer]maLTe[index][length]amEE.El.
 
 ![or]^l:[foldl]^ae:?e1a.0l.
 ![and]^l:[!][or][map];[!]l.
@@ -47,3 +37,5 @@
 ![elem]^el:[any]^x:=ex.l.
 ![nub]^l:[foldl]^ae:?[elem]eaa[append]aLeE.El.
 ![without]^lm:[filter]^x:[!][elem]xm.l.
+
+![range]^ab:?<abLa@+a1bE.

@@ -3,7 +3,10 @@ import os
 
 module_name_aliases = {
     'list': ('L',),
-    'pair': ('P',),
+    'tuple': ('T',),
+    'prelude': ('P',),
+    'function': ('F',),
+    'math': ('M',),
 }
 
 

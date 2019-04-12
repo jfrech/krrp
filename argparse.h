@@ -14,6 +14,7 @@ struct PArgs {
     AtomList *codes;
 
     int err, wrn, inf;
+    bool string_view;
 };
 typedef struct PArgs PArgs;
 

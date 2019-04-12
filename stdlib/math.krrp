@@ -1,0 +1,4 @@
+![factorial]^n:?n*n@-n11.
+![choose]^nk:!f;[factorial]/fn*fkf-nk.
+
+![pow]^nk:?k*n@n-k11.

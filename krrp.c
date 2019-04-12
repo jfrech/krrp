@@ -42,6 +42,8 @@ int main(int argc, char **argv) {
     if (!pargs.parsing_successful)
         MAIN_ERR("Unsuccessful argument parsing.\n");
 
+    GlobOpt.string_view = pargs.string_view;
+
     if (pargs.err < 0) GlobOpt.ERR = false;
     if (pargs.wrn < 0) GlobOpt.WRN = false;
     if (pargs.inf < 0) GlobOpt.INF = false;
@@ -64,7 +66,7 @@ int main(int argc, char **argv) {
     if (pargs.do_test) {
         info("Testing ...\n");
         test_all();
-        
+
         RETURN EXIT_SUCCESS;
     }
 

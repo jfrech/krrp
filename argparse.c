@@ -15,7 +15,7 @@
             ERR("Code flag without content.\n");\
         atomlist_push(pargs.codes, atom_string_newfl(argv[j]));\
     }
-
+#define ARG_STR pargs.string_view = true;
 
 #define ERR(...) return error("ArgParse :: " __VA_ARGS__), pargs
 PArgs parse_args(int argc, char **argv) {
@@ -29,7 +29,9 @@ PArgs parse_args(int argc, char **argv) {
 
         .err = 0,
         .wrn = 0,
-        .inf = 0
+        .inf = 0,
+
+        .string_view = false
     };
 
     bool interpret_arguments = true;
@@ -49,13 +51,14 @@ PArgs parse_args(int argc, char **argv) {
                 else if (strcmp(arg, "--help") == 0) { ARG_HELP }
                 else if (strcmp(arg, "--test") == 0) { ARG_TEST }
                 else if (strcmp(arg, "--code") == 0) { ARG_CODE }
+                else if (strcmp(arg, "--str" ) == 0) { ARG_STR }
 
-                else if (strcmp(arg, "--error") == 0) pargs.err = 1;
-                else if (strcmp(arg, "--warning") == 0) pargs.wrn = 1;
-                else if (strcmp(arg, "--info") == 0) printf("hm."),pargs.inf = 1;
-                else if (strcmp(arg, "--noerror") == 0) pargs.err = -1;
+                else if (strcmp(arg, "--error"    ) == 0) pargs.err = 1;
+                else if (strcmp(arg, "--warning"  ) == 0) pargs.wrn = 1;
+                else if (strcmp(arg, "--info"     ) == 0) pargs.inf = 1;
+                else if (strcmp(arg, "--noerror"  ) == 0) pargs.err = -1;
                 else if (strcmp(arg, "--nowarning") == 0) pargs.wrn = -1;
-                else if (strcmp(arg, "--noinfo") == 0) pargs.inf = -1;
+                else if (strcmp(arg, "--noinfo"   ) == 0) pargs.inf = -1;
 
                 else
                     ERR("Unknown argument `%s`.\n", arg);
@@ -80,3 +83,7 @@ PArgs parse_args(int argc, char **argv) {
     return pargs;
 }
 #undef ERR
+#undef ARG_HELP
+#undef ARG_TEST
+#undef ARG_CODE
+#undef ARG_STR

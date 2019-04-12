@@ -9,6 +9,8 @@
 #include "util.h"
 #include "memorymanagement.h"
 
+#include "Opt.h"
+extern Opt GlobOpt;
 
 /* GlobalAtomTable
 
@@ -124,14 +126,21 @@ Atom *atom_representation(Atom *atom) {
 
     else if (atom->type == atom_type_integer) {
         IntegerAtom *integer_atom = atom->atom;
-        if (integer_atom->value >= 0 && integer_atom->value <= 9)
-            return atom_string_fromlong(integer_atom->value);
-        else
-            return atom_string_concat3(
-                atom_string_newfl("$"),
-                atom_string_fromlong(integer_atom->value),
-                atom_string_newfl(".")
-            );
+
+        if (GlobOpt.string_view)
+            return atom_string_fromchar(integer_atom->value & 0xFF);
+
+        else {
+            if (integer_atom->value >= 0 && integer_atom->value <= 9)
+                return atom_string_fromlong(integer_atom->value);
+            else
+                return atom_string_concat3(
+                    atom_string_newfl("$"),
+                    atom_string_fromlong(integer_atom->value),
+                    atom_string_newfl(".")
+                );
+        }
+
     }
 
     else if (atom->type == atom_type_primitive) {
@@ -219,10 +228,14 @@ Atom *atom_representation(Atom *atom) {
 
     else if (atom->type == atom_type_struct) {
         StructAtom *struct_atom = atom->atom;
-        return atom_string_concat(
-            atom_representation(struct_atom->type),
-            atom_struct_representation(struct_atom->scope)
-        );
+
+        if (GlobOpt.string_view)
+            return atom_struct_representation(struct_atom->scope);
+        else
+            return atom_string_concat(
+                atom_representation(struct_atom->type),
+                atom_struct_representation(struct_atom->scope)
+            );
     }
 
     else if (atom->type == atom_type_string) {
