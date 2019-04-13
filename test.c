@@ -1,3 +1,6 @@
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "atom.h"
 #include "util.h"
 #include "parse.h"
@@ -5,8 +8,6 @@
 #include "memorymanagement.h"
 #include "debug.h"
 
-#include <stdlib.h>
-#include <stdio.h>
 
 void test(const char *source, Atom *expected) {
     char *esource = stresc(source);

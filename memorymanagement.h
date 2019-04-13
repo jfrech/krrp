@@ -1,9 +1,10 @@
 #ifndef MEMORYMANAGEMENT_H
 #define MEMORYMANAGEMENT_H
 
+#include <stdlib.h>
+
 #include "atom.h"
 
-#include <stdlib.h>
 
 typedef struct {
     long allocations;
@@ -11,6 +12,7 @@ typedef struct {
     long nullpointer_frees;
     long allocated_bytes;
 } MemoryManagementDebug;
+
 
 void *mm_malloc(const char *msg, size_t n);
 void mm_free(const char *msg, void *ptr);

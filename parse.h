@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "atom.h"
 
+
 typedef enum {
     parse_state_main,
     parse_state_functiondeclaration_parameters,

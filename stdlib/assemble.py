@@ -15,7 +15,7 @@ stdlib = os.path.dirname(os.path.realpath(__file__))
 template = 'atom_scope_push(ImportedSource, atom_name_new(strdup(%s)), atom_string_newfl(%s));'
 c_escape = lambda s: r'(char []) {%s, 0x00}' % ', '.join(fr'0x{ord(c) & 0xFF:X}' for c in s)
 
-with open(stdlib + '/krrp_stdlib.c', 'w') as krrp_stdlib:
+with open(stdlib + '/krrp_stdlib.c_fragment', 'w') as krrp_stdlib:
     for _file_name in os.listdir(stdlib):
         full_file_name = stdlib + '/' + _file_name
         file_name, extension = os.path.splitext(_file_name)

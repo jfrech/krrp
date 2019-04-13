@@ -5,7 +5,7 @@ SOURCES = $(wildcard *.c)
 HEADERS = $(wildcard *.h)
 OBJECTS = $(patsubst %.c, %.o, $(SOURCES))
 
-OTHER = $(wildcard stdlib/*.c)
+OTHER = $(wildcard stdlib/stdlib.c_fragment)
 
 krrp: $(SOURCES) $(HEADERS) $(OTHER)
 	$(CC) $(CFLAGS) -c $(SOURCES)

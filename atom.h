@@ -1,9 +1,11 @@
 #ifndef ATOM_H
 #define ATOM_H
 
-#include "atomlist.h"
 #include <stdbool.h>
 #include <stdio.h>
+
+#include "atomlist.h"
+
 
 // used to declare empty structs
 #define EMPTY char _;

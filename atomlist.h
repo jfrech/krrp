@@ -4,9 +4,6 @@
 #include "typedefs.h"
 #include <stdbool.h>
 
-// TODO
-Atom *atomlist_representation(AtomList *lst);
-
 
 struct AtomList { AtomListNode *head; };
 struct AtomListNode { Atom *atom; AtomListNode *next; };
@@ -25,5 +22,6 @@ bool atomlist_equal(AtomList *lstA, AtomList *lstB);
 bool atomlist_purely(AtomList *lst, atom_type type);
 
 void atomlist_remove_by_pointer(AtomList *lst, Atom *atom);
+Atom *atomlist_representation(AtomList *lst);
 
 #endif

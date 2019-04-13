@@ -3,6 +3,7 @@
 
 #include "atom.h"
 
+
 void *test(const char *source, Atom *expected);
 void *test_all();
 

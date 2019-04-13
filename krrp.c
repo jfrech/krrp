@@ -1,20 +1,19 @@
 // krrp by Jonathan Frech (2018 to 2019)
 
-#include <stdio.h>
-#include "atom.h"
-#include "parse.h"
-#include "interpret.h"
-#include "debug.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 
+#include "atom.h"
+#include "parse.h"
+#include "interpret.h"
+#include "debug.h"
 #include "util.h"
 #include "test.h"
 #include "memorymanagement.h"
-
 #include "argparse.h"
 
 #include "Opt.h"

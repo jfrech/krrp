@@ -6,34 +6,36 @@
 #include "debug.h"
 #include "memorymanagement.h"
 
-/*** GRAMMAR ***
+/* === Grammar ===
 
-<program> ::= <statement>* "\0"
+    <program> ::= <statement>* "\0"
 
-<statement> ::= <primitive>
-              | <function_declaration>
-              | <struct_initialization>
-              | <comment>
-              | <whitespace>
-              | <long_literal>
-              | <long_name>
-              | <name>
+    <statement> ::= <primitive>
+                  | <function_declaration>
+                  | <struct_initialization>
+                  | <comment>
+                  | <whitespace>
+                  | <long_literal>
+                  | <long_name>
+                  | <name>
 
-<long_name>            ::= "[" [^\0\]] "]"
-<long_literal>         ::= "$" [0-9]+ "."
-<primitive>            ::= "," | ";" | "#!" | "#?" | "\\"
-<function_declaration> ::= "^" <name>* ":" <statement>+ "."
-<whitespace>           ::= " " | "\t" | "\n" | "\r"
-<comment>              ::= "~" [^\0\n]*
-<name>                 ::= [^\0]
+    <long_name>            ::= "[" [^\0\]] "]"
+    <long_literal>         ::= "$" [0-9]+ "."
+    <primitive>            ::= "," | ";" | "!" | "\\"
+                             | "?" | "|" | "&"
+                             | "#!" | "#?"
+    <function_declaration> ::= "^" <name>* ":" <statement>+ "."
+    <whitespace>           ::= " " | "\t" | "\n" | "\r"
+    <comment>              ::= "~" [^\0\n]*
+    <name>                 ::= [^\0]
 
-<...>  : non-terminal
-|      : alternation
-*, +   : quantifiers
-\...   : escaped character (using ASCII)
-"..."  : literal
-[...]  : character class
-[^...] : complemented character class
+    <...>  : non-terminal
+    |      : alternation
+    *, +   : quantifiers
+    \...   : escaped character (using ASCII)
+    "..."  : literal
+    [...]  : character class
+    [^...] : complemented character class
 
 */
 

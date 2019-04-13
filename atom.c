@@ -12,6 +12,7 @@
 #include "Opt.h"
 extern Opt GlobOpt;
 
+
 /* GlobalAtomTable
 
     The global atom table retains a pointer to every atom in use.
@@ -31,7 +32,7 @@ void globalatomtable_init() {
     GlobalNullAtom = GlobalNullConditionAtom = GlobalNullScopeAtom = NULL;
     ImportedSource = atom_scope_new_empty();
 
-    #include "stdlib/krrp_stdlib.c"
+    #include "stdlib/krrp_stdlib.c_fragment"
 }
 
 

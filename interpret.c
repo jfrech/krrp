@@ -8,13 +8,12 @@
 #include "interpret.h"
 #include "util.h"
 #include "memorymanagement.h"
-
-#include "parse.h" // TODO?
+#include "parse.h"
 
 #include "Opt.h"
 extern Opt GlobOpt;
-
 extern Atom *ImportedSource;
+
 
 #define ASSERT(cnd, ...) { if (!(cnd)) return error("interpret :: " __VA_ARGS__), atom_Enull_new(); }
 

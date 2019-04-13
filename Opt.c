@@ -1,5 +1,6 @@
 #include "Opt.h"
 
+
 Opt GlobOpt = (Opt) {
     .ERR = true,
     .WRN = true,

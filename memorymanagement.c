@@ -1,8 +1,7 @@
-#include "memorymanagement.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "memorymanagement.h"
 #include "atom.h"
 #include "debug.h"
 

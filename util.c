@@ -5,6 +5,7 @@
 #include "debug.h"
 #include "memorymanagement.h"
 
+
 char *strdup(const char *str) {
     char *dup = mm_malloc("strdup", (strlen(str)+1) * sizeof *dup);
     strcpy(dup, str);
