@@ -1,1 +1,4 @@
 krrp
+
+*.o
+*.DS_Store
