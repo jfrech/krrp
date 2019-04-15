@@ -9,7 +9,7 @@
 
 
 #define ARG_HELP pargs.print_help = true;
-#define ARG_TEST pargs.do_test = true;
+#define ARG_TEST pargs.do_test = true, pargs.inf = 1;
 #define ARG_CODE {\
         if (++j >= argc)\
             ERR("Code flag without content.\n");\

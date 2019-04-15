@@ -12,6 +12,8 @@
 void test(const char *source, Atom *expected) {
     char *esource = stresc(source);
 
+    info("Testing '%s'\n", esource);
+
     AtomList *parsed = parse(source);
     Atom *scope = main_scope();
     Atom *computed = interpret(0, parsed, scope, true);

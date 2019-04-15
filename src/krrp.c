@@ -1,6 +1,5 @@
 // krrp by Jonathan Frech (2018 to 2019)
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,6 +18,7 @@
 #include "Opt.h"
 extern Opt GlobOpt;
 
+
 // memory-management-aware return
 #define RETURN return memorymanagement_free_all(),
 
@@ -31,6 +31,7 @@ extern Opt GlobOpt;
     "    -h, --help: Print this message.\n"\
     "    -t, --test: Perform a self-test.\n"\
     "\n"), EXIT_SUCCESS
+
 
 int main(int argc, char **argv) {
 
@@ -58,8 +59,12 @@ int main(int argc, char **argv) {
             "    krrp [options] [source files]\n"
             "Options:\n"
             "    -h, --help         : Display this help message.\n"
-            "    -t, --test         : Perform a self-test.\n"
+            "    -t, --test         : Perform a self-test. (Sets `--info`.)\n"
             "    -c, --code [source]: Execute given source.\n"
+            "\n"
+            "    --[no]error        : Toggle error messages.\n"
+            "    --[no]warning      : Toggle warning messages.\n"
+            "    --[no]info         : Toggle info messages.\n"
         ), EXIT_SUCCESS;
 
     if (pargs.do_test) {
