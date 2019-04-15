@@ -306,10 +306,13 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                     Atom *import_name = atomlist_pop_front(atoms);
                     ASSERT(atom_name_is(import_name), "interpret: Import needs NameAtom, got %s.\n", atom_repr(import_name))
 
+                    info("Importing '%s':\n", atom_repr(import_name));
                     if (!atom_scope_contains_bind(ImportedSource, import_name)) {
                         Atom *import_contents = atom_string_read_from_file(string_from_atom(import_name));
                         ASSERT(atom_string_is(import_contents), "interpret: Import failed.\n")
                         atom_scope_push(ImportedSource, import_name, import_contents);
+
+                        info("    Read from file.\n");
                     }
                     const char *import_source = string_from_atom(atom_scope_unbind(ImportedSource, import_name));
 
@@ -322,8 +325,10 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                     AtomListNode *name_node = ((ScopeAtom *) import_scope->atom)->names->head;
                     while (name_node) {
                         Atom *name = name_node->atom;
-                        if (!atom_scope_contains_bind(scope, name))
+                        if (!atom_scope_contains_bind(scope, name)) {
                             atom_scope_push(scope, name, atom_scope_unbind(import_scope, name));
+                            info("    Bound '%s'.\n", atom_repr(name));
+                        }
                         name_node = name_node->next;
                     }
                 }

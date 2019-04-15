@@ -1,13 +1,21 @@
 CC = clang
 CFLAGS = -Wall -Wpedantic -O0
 
+.PHONY: stdlib
+
 SOURCES = $(wildcard *.c)
 HEADERS = $(wildcard *.h)
 OBJECTS = $(patsubst %.c, %.o, $(SOURCES))
 
-OTHER = $(wildcard stdlib/stdlib.c_fragment)
+FRAGMENT = $(wildcard stdlib/*.c_fragment)
+STDLIB = $(wildcard stdlib/*)
 
-krrp: $(SOURCES) $(HEADERS) $(OTHER)
+
+krrp: $(SOURCES) $(HEADERS) $(FRAGMENT)
 	$(CC) $(CFLAGS) -c $(SOURCES)
 	$(CC) $(OBJECTS) -o $@
 	rm -f $(OBJECTS)
+
+stdlib: $(STDLIB)
+	python3 stdlib/assemble.py
+	$(MAKE) krrp
