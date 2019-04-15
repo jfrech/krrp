@@ -32,7 +32,7 @@ void globalatomtable_init() {
     GlobalNullAtom = GlobalNullConditionAtom = GlobalNullScopeAtom = NULL;
     ImportedSource = atom_scope_new_empty();
 
-    #include "stdlib/krrp_stdlib.c_fragment"
+    #include "../stdlib/krrp_stdlib.c_fragment"
 }
 
 
