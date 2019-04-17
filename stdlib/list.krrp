@@ -38,4 +38,16 @@
 ![nub]^l:[foldl]^ae:?[elem]eaa[append]aLeE.El.
 ![without]^lm:[filter]^x:[!][elem]xm.l.
 
-![range]^ab:?<abLa@+a1bE.
+![range_step]^abs:?<abLa@+asbsE.
+![range]^ab:[range_step]ab1.
+
+~ sort using quicksort with a custom comparison function
+![sortby]^cl:
+    ![!c][compose2];[!];c
+    ?#?El E
+    ![pivot]#!fl
+    ![left] [filter]^x:c   x[pivot].#!rl
+    ![right][filter]^x:[!c]x[pivot].#!rl
+    [append]@;c[left]L[pivot]@;c[right].
+
+![sort]^l:[sortby];<l.

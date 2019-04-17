@@ -17,6 +17,9 @@ krrp: $(SOURCES) $(HEADERS) $(FRAGMENT)
 	$(CC) $(OBJECTS) -o $@
 	rm -f $(OBJECTS)
 
+	# test on each build
+	./krrp --test --noinfo
+
 stdlib: $(STDLIB)
 	python3 stdlib/assemble.py
 	$(MAKE) krrp

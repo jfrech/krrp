@@ -1,2 +1,7 @@
 ![flip]^f:^xy:fyx..
 ![id]^x:x.
+
+![compose]^fg:^x:fgx..
+![compose2]^fg:^xy:fgxy..
+![compose3]^fg:^xyz:fgxyz..
+![compose4]^fg:^xyzw:fgxyzw..
