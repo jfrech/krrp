@@ -2,3 +2,7 @@
 ![choose]^nk:!f;[factorial]/fn*fkf-nk.
 
 ![pow]^nk:?k*n@n-k11.
+
+![prime?]^n:
+ !p^d:?<d2 1 ?%nd@-d10.
+ ?<n2 0 p-n1.
