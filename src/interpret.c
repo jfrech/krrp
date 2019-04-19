@@ -18,11 +18,45 @@ extern Atom *ImportedSource;
 #define ASSERT(cnd, ...) { if (!(cnd)) return error("interpret :: " __VA_ARGS__), atom_Enull_new(); }
 
 
-Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active) {
+
+
+
+/* TODO */
+// generate the main scope (every scope is a descendant of this scope or the null scope itself)
+static Atom *main_scope() {
+    Atom *scope = atom_scope_new_empty();
+
+    // bind macro
+    #define B(str, bnd) atom_scope_push(scope, atom_name_new(str), bnd);
+
+    // bind digit macro
+    #define BD(str, dgt) B(strdup(str), atom_integer_new(dgt))
+    BD("0", 0) BD("1", 1) BD("2", 2) BD("3", 3) BD("4", 4)
+    BD("5", 5) BD("6", 6) BD("7", 7) BD("8", 8) BD("9", 9)
+
+    // bind arithmetic primitive macro
+    #define BAP(str) B(strdup(str), atom_function_new(2, NULL, NULL, atom_nullscope_new(), strdup(str)))
+    // #define BAP3(str) B(strdup(str), atom_function_new(3, NULL, NULL, atom_nullscope_new(), strdup(str)))
+
+    BAP("%") BAP("*") BAP("+") BAP("-") BAP("/") BAP("<") BAP("=") BAP(">")
+    // BAP("!") BAP3("?") BAP("|") BAP("&")
+
+    #undef BD
+    #undef B
+
+    #undef BAP
+    #undef BAP3
+
+    ((ScopeAtom *) scope->atom)->is_main = true;
+
+    return scope;
+}
+
+Atom *_interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active) {
     ASSERT(recursion_depth < GlobOpt.maximum_interpretation_recursion_depth,
-        "interpret: Maximum interpretation iterations reached.\n")
-    ASSERT(atomlist_is(atoms), "interpret: Given invalid atoms AtomList.\n");
-    ASSERT(atom_scope_is(scope), "interpret: Given invalid scope ScopeAtom.\n");
+           "interpret: Maximum interpretation iterations reached.\n")
+    ASSERT(atomlist_is(atoms), "interpret: Given invalid atoms AtomList.\n")
+    ASSERT(atom_scope_is(scope), "interpret: Given invalid scope ScopeAtom.\n")
 
     int execution_depth = 0;
     while (atoms->head) {
@@ -74,7 +108,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
             // (higher-order, could else be function)
             if (execution_depth == 0 && !active) {
                 for (int j = 0; j < function_atom->arity; j++)
-                    interpret(recursion_depth+1, atoms, atom_scope_new_fake(scope), false);
+                    _interpret(recursion_depth+1, atoms, atom_scope_new_fake(scope), false);
 
                 return atom_nullcondition_new();
             }
@@ -89,8 +123,8 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
 
                 // atom equality
                 if (strcmp(p, "=") == 0) {
-                    Atom *atomA = interpret(recursion_depth+1, atoms, scope, true);
-                    Atom *atomB = interpret(recursion_depth+1, atoms, scope, true);
+                    Atom *atomA = _interpret(recursion_depth+1, atoms, scope, true);
+                    Atom *atomB = _interpret(recursion_depth+1, atoms, scope, true);
 
                     ASSERT(atom_is(atomA), "interpret: `=` expected atom as first argument (got `%s`).\n", atom_repr(atomA))
                     ASSERT(atom_is(atomB), "interpret: `=` expected atom as second argument (got `%s`).\n", atom_repr(atomA))
@@ -100,8 +134,8 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
 
                 // integer operations
                 else {
-                    Atom *atomA = interpret(recursion_depth+1, atoms, scope, true);
-                    Atom *atomB = interpret(recursion_depth+1, atoms, scope, true);
+                    Atom *atomA = _interpret(recursion_depth+1, atoms, scope, true);
+                    Atom *atomB = _interpret(recursion_depth+1, atoms, scope, true);
 
                     ASSERT(atom_integer_is(atomA), "interpret: Integer primitive's first argument is not an integer (got `%s`).\n", atom_repr(atomA))
                     ASSERT(atom_integer_is(atomB), "interpret: Integer primitive's second argument is not an integer (got `%s`).\n", atom_repr(atomB))
@@ -133,7 +167,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 AtomListNode *node = function_atom->parameters->head;
                 Atom *scp = atom_scope_new_inherits(function_atom->scope);
                 while (node) {
-                    Atom *a = interpret(recursion_depth+1, atoms, scope, true);
+                    Atom *a = _interpret(recursion_depth+1, atoms, scope, true);
 
                     ASSERT(atom_is(a), "interpret: Found no atom to bind function parameter %s to.\n", atom_repr(node->atom))
                     ASSERT(atom_scope_push(scp, node->atom, a), "interpret: Attempt at rebind.\n")
@@ -142,7 +176,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 }
 
                 AtomList *atoms_copy = atomlist_copy(function_atom->body);
-                Atom *ret = interpret(recursion_depth+1, atoms_copy, scp, true);
+                Atom *ret = _interpret(recursion_depth+1, atoms_copy, scp, true);
                 atomlist_free(atoms_copy);
 
                 if (execution_depth > 0)
@@ -166,7 +200,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
 
             if (execution_depth == 0 && !active) {
                 for (int j = 0; j < atomlist_len(structinitializer_atom->fields); j++)
-                    interpret(recursion_depth+1, atoms, atom_scope_new_fake(scope), false);
+                    _interpret(recursion_depth+1, atoms, atom_scope_new_fake(scope), false);
 
                 return atom_nullcondition_new();
             }
@@ -177,7 +211,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
             AtomListNode *node = fields->head;
 
             while (node) {
-                atom_scope_push(struct_scope, node->atom, interpret(recursion_depth+1, atoms, scope, true));
+                atom_scope_push(struct_scope, node->atom, _interpret(recursion_depth+1, atoms, scope, true));
                 node = node->next;
             }
 
@@ -227,7 +261,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                     Atom *name = atomlist_pop_front(atoms);
                     ASSERT(atom_name_is(name), "interpret: Bind needs NameAtom, got %s.\n", atom_repr(name))
 
-                    Atom *bind = interpret(recursion_depth+1, atoms, scope, active);
+                    Atom *bind = _interpret(recursion_depth+1, atoms, scope, active);
                     ASSERT(atom_is(bind), "interpret: Bind needs Atom, got %s.\n", atom_repr(bind))
 
                     ASSERT(atom_scope_push(scope, name, bind), "interpret: Could not bind %s.\n", atom_repr(name))
@@ -237,22 +271,22 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 else if (c == '?') {
                     if (!active) {
                         for (int j = 0; j < 3; j++)
-                            ASSERT(atom_nullcondition_is(interpret(recursion_depth+1, atoms, scope, false)), "interpret: Conditional primitive expected three arguments, got too few.\n")
+                            ASSERT(atom_nullcondition_is(_interpret(recursion_depth+1, atoms, scope, false)), "interpret: Conditional primitive expected three arguments, got too few.\n")
 
                         return atom_nullcondition_new();
                     }
 
-                    Atom *condition = interpret(recursion_depth+1, atoms, scope, true);
+                    Atom *condition = _interpret(recursion_depth+1, atoms, scope, true);
                     ASSERT(atom_integer_is(condition), "interpret: Conditional primitive expected integer as condition, got %s.\n", atom_repr(condition))
 
                     Atom *return_;
                     if (((IntegerAtom *) condition->atom)->value) {
-                        return_ = interpret(recursion_depth+1, atoms, scope, true);
-                        interpret(recursion_depth+1, atoms, scope, false);
+                        return_ = _interpret(recursion_depth+1, atoms, scope, true);
+                        _interpret(recursion_depth+1, atoms, scope, false);
                     }
                     else {
-                        interpret(recursion_depth+1, atoms, scope, false);
-                        return_ = interpret(recursion_depth+1, atoms, scope, true);
+                        _interpret(recursion_depth+1, atoms, scope, false);
+                        return_ = _interpret(recursion_depth+1, atoms, scope, true);
                     }
 
                     return active ? return_ : atom_nullcondition_new();
@@ -265,14 +299,14 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 else if (c == '#' + '?' /* == 'b' */) {
                     if (!active) {
                         atomlist_pop_front(atoms);
-                        interpret(recursion_depth+1, atoms, scope, false);
+                        _interpret(recursion_depth+1, atoms, scope, false);
                         return atom_nullcondition_new();
                     }
 
                     Atom *type = atomlist_pop_front(atoms);
                     ASSERT(atom_name_is(type), "interpret: Struct type check requires NameAtom, got %s.\n", atom_repr(type))
 
-                    Atom *struct_ = interpret(recursion_depth+1, atoms, scope, active);
+                    Atom *struct_ = _interpret(recursion_depth+1, atoms, scope, active);
                     ASSERT(atom_struct_is(struct_), "interpret: Struct type check requires StructAtom, got %s.\n", atom_repr(struct_))
 
                     StructAtom *struct_atom = struct_->atom;
@@ -284,14 +318,14 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                 else if (c == '#' + '!' /* == 'D' */) {
                     if (!active) {
                         atomlist_pop_front(atoms);
-                        interpret(recursion_depth+1, atoms, atom_scope_new_fake(scope), false);
+                        _interpret(recursion_depth+1, atoms, atom_scope_new_fake(scope), false);
                         return atom_nullcondition_new();
                     }
 
                     Atom *field_name = atomlist_pop_front(atoms);
                     ASSERT(atom_name_is(field_name), "interpret: Struct field extraction requires NameAtom, got %s.\n", atom_repr(field_name))
 
-                    Atom *struct_ = interpret(recursion_depth+1, atoms, scope, active);
+                    Atom *struct_ = _interpret(recursion_depth+1, atoms, scope, active);
                     ASSERT(atom_struct_is(struct_), "interpret: Struct field extraction requires StructAtom, got %s.\n", atom_repr(struct_))
 
                     StructAtom *struct_atom = struct_->atom;
@@ -320,7 +354,7 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                     AtomList *import_parsed = parse(import_source);
                     Atom *import_scope = main_scope();
                     while (!atomlist_empty(import_parsed))
-                        interpret(0, import_parsed, import_scope, true);
+                        _interpret(0, import_parsed, import_scope, true);
 
                     AtomListNode *name_node = ((ScopeAtom *) import_scope->atom)->names->head;
                     while (name_node) {
@@ -332,6 +366,9 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
                         name_node = name_node->next;
                     }
                 }
+
+                else if (c == 'S')
+                    return scope;
 
                 else
                     ASSERT(false, "interpret: Unknown primitive `%s`.\n", atom_repr(atom))
@@ -354,33 +391,13 @@ Atom *interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active)
     return info("Fell through (active = %s).\n", active ? "true" : "false"), atom_null_new();
 }
 
+Atom *interpret_with_scope(AtomList *parsed, Atom *scope) {
+    if (scope == NULL) // TODO
+        return interpret(parsed); // TODO
 
-// generate the main scope (every scope is a descendant of this scope or the null scope itself)
-Atom *main_scope() {
-    Atom *scope = atom_scope_new_empty();
+    return _interpret(0, parsed, scope, true);
+}
 
-    // bind macro
-    #define B(str, bnd) atom_scope_push(scope, atom_name_new(str), bnd);
-
-    // bind digit macro
-    #define BD(str, dgt) B(strdup(str), atom_integer_new(dgt))
-    BD("0", 0) BD("1", 1) BD("2", 2) BD("3", 3) BD("4", 4)
-    BD("5", 5) BD("6", 6) BD("7", 7) BD("8", 8) BD("9", 9)
-
-    // bind arithmetic primitive macro
-    #define BAP(str) B(strdup(str), atom_function_new(2, NULL, NULL, atom_nullscope_new(), strdup(str)))
-    // #define BAP3(str) B(strdup(str), atom_function_new(3, NULL, NULL, atom_nullscope_new(), strdup(str)))
-
-    BAP("%") BAP("*") BAP("+") BAP("-") BAP("/") BAP("<") BAP("=") BAP(">")
-    // BAP("!") BAP3("?") BAP("|") BAP("&")
-
-    #undef BD
-    #undef B
-
-    #undef BAP
-    #undef BAP3
-
-    ((ScopeAtom *) scope->atom)->is_main = true;
-
-    return scope;
+Atom *interpret(AtomList *parsed) {
+    return interpret_with_scope(parsed, main_scope());
 }
