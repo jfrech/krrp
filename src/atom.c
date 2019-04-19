@@ -648,11 +648,13 @@ Atom *atom_struct_new(Atom *type, Atom *scope) {
     if (!atom_scope_is(scope))
         return error_atom("atom_struct_new: Given invalid scope.\n"), NULL;
 
-    // TODO check frozen
+    if (!(((ScopeAtom *) scope->atom)->is_frozen))
+        return error_atom("atom_struct_new: Thawed scope.\n"), NULL;
 
     StructAtom *struct_atom = mm_malloc("atom_struct_new", sizeof *struct_atom);
     struct_atom->type = type;
     struct_atom->scope = scope;
+
 
     return atom_new(atom_type_struct, struct_atom);
 }
@@ -720,8 +722,7 @@ Atom *atom_string_fromchar(char c) {
     return atom_string_new(str);
 }
 
-// TODO :: Remove the need for `newfl`.
-// `fl`: from literal
+// 'fl' meaning 'from literal'
 Atom *atom_string_newfl(const char *str) {
     char *new_str = mm_malloc("atom_string_newfl", (strlen(str)+1) * sizeof *str);
     sprintf(new_str, "%s", str);

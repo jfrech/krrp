@@ -14,8 +14,7 @@ void test(const char *source, Atom *expected) {
 
     info("Testing '%s'\n", esource);
 
-    AtomList *parsed = parse(source);
-    Atom *computed = interpret(parsed); /*TODO*/
+    Atom *computed = interpret(parse(source));
 
     if (!atom_equal(computed, expected))
         error("[FAIL] \"%s\"\n   :: '%s' differs from expected '%s'.\n", esource, atom_repr(computed), atom_repr(expected));
