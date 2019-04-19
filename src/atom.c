@@ -354,16 +354,6 @@ bool atom_primitive_is(Atom *atom) {
 
 
 Atom *atom_functiondeclaration_new(int arity, AtomList *parameters, AtomList *body) {
-    /*start_GlobalAtomTable_antialiasing
-        if (atom_functiondeclaration_is(atom)) {
-            FunctionDeclarationAtom *functiondeclaration_atom = atom->atom;
-            if (functiondeclaration_atom->arity == arity
-            && atomlist_equal(functiondeclaration_atom->parameters, parameters)
-            && atomlist_equal(functiondeclaration_atom->body, body))
-                return atom;
-        }
-    end_GlobalAtomTable_antialiasing TODO*/
-
     if (!atomlist_is(parameters)
     || !atomlist_purely(parameters, atom_type_name)
     || !atomlist_is(body))
@@ -379,19 +369,7 @@ Atom *atom_functiondeclaration_new(int arity, AtomList *parameters, AtomList *bo
 }
 
 bool atom_functiondeclaration_is(Atom *atom) {
-    if (!atom_is_of_type(atom, atom_type_functiondeclaration))
-        return false;
-
-    /* TODO
-    FunctionDeclarationAtom *functiondeclaration_atom = atom->atom;
-    if (functiondeclaration_atom->arity < 0
-    || !atomlist_is(functiondeclaration_atom->parameters)
-    || !atomlist_purely(functiondeclaration_atom->parameters, atom_type_name)
-    || !atomlist_is(functiondeclaration_atom->body))
-        return error_atom("atom_functiondeclaration_is: Malformed FunctionDeclarationAtom.\n"), false;
-*/
-
-    return true;
+    return atom_is_of_type(atom, atom_type_functiondeclaration);
 }
 
 Atom *atom_function_new(int arity, AtomList *parameters, AtomList *body, Atom *scope, char *primitive) {
@@ -417,22 +395,6 @@ Atom *atom_function_new(int arity, AtomList *parameters, AtomList *body, Atom *s
 bool atom_function_is(Atom *atom) {
     if (!atom_is_of_type(atom, atom_type_function))
         return false;
-
-    /* TODO
-
-    FunctionAtom *function_atom = atom->atom;
-
-    if (!atom_scope_is(function_atom->scope) && !atom_nullscope_is(function_atom->scope))
-        return error_atom("atom_function_is: Malformed FunctionAtom.\n"), false;
-
-    if (function_atom->primitive) {
-        if (atomlist_is(function_atom->parameters) || atomlist_is(function_atom->body))
-            return error_atom("atom_function_is: Malformed FunctionAtom.\n"), false;
-    }
-    else {
-        if (!atomlist_is(function_atom->parameters) || !atomlist_is(function_atom->body))
-            return error_atom("atom_function_is: Malformed FunctionAtom.\n"), false;
-    }*/
 
     return true;
 }
@@ -498,9 +460,7 @@ bool atom_scope_is(Atom *atom) {
     if (!atom_is_of_type(atom, atom_type_scope))
         return false;
 
-    bool PEDANTIC = false; // TODO
-
-    if (PEDANTIC) {
+    if (GlobOpt.pedantic) {
         ScopeAtom *scope_atom = atom->atom;
 
         if (!atomlist_is(scope_atom->names) || !atomlist_purely(scope_atom->names, atom_type_name) || !atomlist_is(scope_atom->binds))
