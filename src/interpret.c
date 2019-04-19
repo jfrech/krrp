@@ -271,8 +271,45 @@ Atom *_interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active
                     return active ? return_ : atom_nullcondition_new();
                 }
 
-                else if (c == '|' ||  c == '&')
-                    ASSERT(false, "TODO :: Functionality for `|` and `&` is not yet implemented.\n")
+                else if (c == '|') {
+                    if (!active) {
+                        for (int j = 0; j < 2; j++)
+                            ASSERT(atom_nullcondition_is(_interpret(recursion_depth+1, atoms, scope, false)), "interpret: Choosing or expected three arguments, got too few.\n")
+
+                        return atom_nullcondition_new();
+                    }
+
+                    Atom *first = _interpret(recursion_depth+1, atoms, scope, true);
+                    ASSERT(atom_integer_is(first), "interpret: Choosing or expected integer as first atom, got %s.\n", atom_repr(first))
+
+                    if (((IntegerAtom *) first->atom)->value) {
+                        _interpret(recursion_depth+1, atoms, scope, false);
+                        return active ? first : atom_nullcondition_new();
+                    }
+
+                    Atom *second = _interpret(recursion_depth+1, atoms, scope, true);
+                    return active ? second : atom_nullcondition_new();
+                }
+
+                else if (c == '&') {
+                    if (!active) {
+                        for (int j = 0; j < 2; j++)
+                            ASSERT(atom_nullcondition_is(_interpret(recursion_depth+1, atoms, scope, false)), "interpret: Choosing and expected three arguments, got too few.\n")
+
+                        return atom_nullcondition_new();
+                    }
+
+                    Atom *first = _interpret(recursion_depth+1, atoms, scope, true);
+                    ASSERT(atom_integer_is(first), "interpret: Choosing and expected integer as first atom, got %s.\n", atom_repr(first))
+
+                    if (((IntegerAtom *) first->atom)->value) {
+                        Atom *second = _interpret(recursion_depth+1, atoms, scope, true);
+                        return active ? second : atom_nullcondition_new();
+                    }
+
+                    _interpret(recursion_depth+1, atoms, scope, false);
+                    return active ? first : atom_nullcondition_new();
+                }
 
                 // struct type check
                 else if (c == '#' + '?' /* == 'b' */) {
