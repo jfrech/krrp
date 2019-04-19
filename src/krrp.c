@@ -103,6 +103,7 @@ int main(int argc, char **argv) {
 
         info("=== Interpreting ===\n");
         Atom *scope = atom_scope_new_double_empty();
+        inject_main(scope);
         while (!atomlist_empty(parsed))
             printf("%s\n", atom_repr(interpret_with_scope(parsed, scope)));
     }

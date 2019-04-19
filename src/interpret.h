@@ -5,10 +5,9 @@
 #include "atom.h"
 
 
-Atom *_interpret(long recursion_depth, AtomList *parsed, Atom *scope, bool active);
 Atom *interpret(AtomList *parsed);
 Atom *interpret_with_scope(AtomList *parsed, Atom *scope);
+void inject_main(Atom *scope);
 
-Atom *TODO_main_scope(); // TODO
 
 #endif
