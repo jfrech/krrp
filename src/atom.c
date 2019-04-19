@@ -737,10 +737,10 @@ Atom *atom_string_newcopy(const char *str) {
 #undef start_GlobalAtomTable_antialiasing
 #undef end_GlobalAtomTable_antialiasing
 
-Atom *atom_string_read_from_file(const char *file_name) {
-    FILE *f = fopen(file_name, "rb");
+Atom *atom_string_read_from_file(const char *filename) {
+    FILE *f = fopen(filename, "rb");
     if (!f)
-        return error_atom("atom_string_read_from_file: Could not open file `%s`.\n", file_name), NULL;
+        return error_atom("atom_string_read_from_file: Could not open file `%s`.\n", filename), NULL;
 
     fseek(f, 0, SEEK_END);
     int length = ftell(f);

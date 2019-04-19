@@ -76,11 +76,11 @@ int main(int argc, char **argv) {
 
     // read `sources` into `code`
     while (!atomlist_empty(pargs.sources)) {
-        const char *file_name = string_from_atom(atomlist_pop_front(pargs.sources));
-        info("* Reading file `%s` ...\n", file_name);
-        Atom *source_a = atom_string_read_from_file(file_name);
+        const char *filename = string_from_atom(atomlist_pop_front(pargs.sources));
+        info("* Reading file `%s` ...\n", filename);
+        Atom *source_a = atom_string_read_from_file(filename);
         if (!atom_is_of_type(source_a, atom_type_string))
-            MAIN_ERR("Could not open krrp source file `%s`.\n", file_name);
+            MAIN_ERR("Could not open krrp source file `%s`.\n", filename);
 
         atomlist_push(pargs.codes, source_a);
     }
