@@ -19,18 +19,9 @@
 extern Opt GlobOpt;
 
 
-// memory-management-aware return
+// memory-management-awareness
 #define RETURN return memorymanagement_free_all(),
-
 #define MAIN_ERR(...) return error(__VA_ARGS__), memorymanagement_free_all(), EXIT_FAILURE
-#define PRINT_HELP RETURN fprintf(stderr,\
-    "ABOUT\n"\
-    "   krrp by Jonathan Frech.\n"\
-    "\n"\
-    "USAGE\n"\
-    "    -h, --help: Print this message.\n"\
-    "    -t, --test: Perform a self-test.\n"\
-    "\n"), EXIT_SUCCESS
 
 
 int main(int argc, char **argv) {
@@ -52,19 +43,26 @@ int main(int argc, char **argv) {
     if (pargs.inf > 0) GlobOpt.INF = true;
 
     if (pargs.print_help)
-        RETURN fprintf(stderr,
-            "krrp by Jonathan Frech, 2018-2019.\n"
-            "\n"
-            "Usage:\n"
-            "    krrp [options] [source files]\n"
-            "Options:\n"
-            "    -h, --help         : Display this help message.\n"
-            "    -t, --test         : Perform a self-test. (Sets `--info`.)\n"
-            "    -c, --code [source]: Execute given source.\n"
-            "\n"
-            "    --[no]error        : Toggle error messages.\n"
-            "    --[no]warning      : Toggle warning messages.\n"
-            "    --[no]info         : Toggle info messages.\n"
+        RETURN fprintf(stdout,\
+            "ABOUT\n"\
+            "   krrp by Jonathan Frech, 2018 to 2019.\n"\
+            "\n"\
+            "USAGE\n"\
+            "    krrp [options] [source files]\n"\
+            "\n"\
+            "OPTIONS\n"\
+            "    -h, --help         : Print this message.\n"\
+            "    -t, --test         : Perform a self-test.\n"\
+            "\n"\
+            "    --str              : Activate string view;\n"\
+            "                         struct names appear invisible and\n"\
+            "                         integers appear as characters.\n"\
+            "\n"\
+            "    -c, --code [source]: Intepret specified source.\n"\
+            "\n"\
+            "    --[no]error        : Toggle error messages (on by default).\n"\
+            "    --[no]warning      : Toggle warning messages (on by default).\n"\
+            "    --[no]info         : Toggle info messages (off by default).\n"\
         ), EXIT_SUCCESS;
 
     if (pargs.do_test) {
@@ -87,7 +85,7 @@ int main(int argc, char **argv) {
 
 
     if (atomlist_empty(pargs.codes))
-        MAIN_ERR("Please specify a krrp source file or code piece.\n");
+        MAIN_ERR("No source code given. When in doubt, use the '--help' option.\n");
 
     while (!atomlist_empty(pargs.codes)) {
         const char *source = string_from_atom(atomlist_pop_front(pargs.codes));
