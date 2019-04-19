@@ -490,6 +490,10 @@ Atom *atom_scope_new_empty() {
     return atom_scope_new(atomlist_new(NULL), atomlist_new(NULL), atom_nullscope_new());
 }
 
+Atom *atom_scope_new_double_empty() {
+    return atom_scope_new(atomlist_new(NULL), atomlist_new(NULL), atom_scope_new_empty());
+}
+
 bool atom_scope_is(Atom *atom) {
     if (!atom_is_of_type(atom, atom_type_scope))
         return false;

@@ -9,4 +9,6 @@ Atom *_interpret(long recursion_depth, AtomList *parsed, Atom *scope, bool activ
 Atom *interpret(AtomList *parsed);
 Atom *interpret_with_scope(AtomList *parsed, Atom *scope);
 
+Atom *TODO_main_scope(); // TODO
+
 #endif

@@ -23,7 +23,7 @@ extern Atom *ImportedSource;
 
 /* TODO */
 // generate the main scope (every scope is a descendant of this scope or the null scope itself)
-static Atom *main_scope() {
+Atom *TODO_main_scope() { // TODO
     Atom *scope = atom_scope_new_empty();
 
     // bind macro
@@ -49,7 +49,15 @@ static Atom *main_scope() {
 
     ((ScopeAtom *) scope->atom)->is_main = true;
 
-    return scope;
+    return atom_scope_new_inherits(scope);
+}
+
+Atom *interpret_with_scope(AtomList *parsed, Atom *scope) {
+    return _interpret(0, parsed, scope, true);
+}
+
+Atom *interpret(AtomList *parsed) {
+    return interpret_with_scope(parsed, TODO_main_scope());
 }
 
 Atom *_interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active) {
@@ -337,6 +345,11 @@ Atom *_interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active
 
                 // import
                 else if (c == '\\') {
+                    Atom *upper_scope = ((ScopeAtom *) scope->atom)->upper_scope;
+                    ASSERT(!atom_nullscope_is(upper_scope), "interpret: Importing into one-layered scope.\n")
+
+
+                    // loading import source
                     Atom *import_name = atomlist_pop_front(atoms);
                     ASSERT(atom_name_is(import_name), "interpret: Import needs NameAtom, got %s.\n", atom_repr(import_name))
 
@@ -351,16 +364,24 @@ Atom *_interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active
                     const char *import_source = string_from_atom(atom_scope_unbind(ImportedSource, import_name));
 
 
+                    // interpreting import source
                     AtomList *import_parsed = parse(import_source);
-                    Atom *import_scope = main_scope();
-                    while (!atomlist_empty(import_parsed))
-                        _interpret(0, import_parsed, import_scope, true);
+                    ASSERT(import_parsed != NULL, "interpret: Could not parse import source.:\n")
+                    atomlist_push(import_parsed, atom_primitive_new('S'));
 
+                    Atom *import_scope = TODO_main_scope();
+                    Atom *imported_scope = NULL;
+                    while (!atomlist_empty(import_parsed))
+                        imported_scope = interpret_with_scope(import_parsed, import_scope);
+                    ASSERT(atom_scope_is(imported_scope), "interpret: Did not import a scope.\n")
+
+
+                    // binding imported atoms
                     AtomListNode *name_node = ((ScopeAtom *) import_scope->atom)->names->head;
                     while (name_node) {
                         Atom *name = name_node->atom;
-                        if (!atom_scope_contains_bind(scope, name)) {
-                            atom_scope_push(scope, name, atom_scope_unbind(import_scope, name));
+                        if (!atom_scope_contains_bind(upper_scope, name)) {
+                            atom_scope_push(upper_scope, name, atom_scope_unbind(import_scope, name));
                             info("    Bound '%s'.\n", atom_repr(name));
                         }
                         name_node = name_node->next;
@@ -389,15 +410,4 @@ Atom *_interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active
     }
 
     return info("Fell through (active = %s).\n", active ? "true" : "false"), atom_null_new();
-}
-
-Atom *interpret_with_scope(AtomList *parsed, Atom *scope) {
-    if (scope == NULL) // TODO
-        return interpret(parsed); // TODO
-
-    return _interpret(0, parsed, scope, true);
-}
-
-Atom *interpret(AtomList *parsed) {
-    return interpret_with_scope(parsed, main_scope());
 }

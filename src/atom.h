@@ -63,6 +63,7 @@ struct ScopeAtom { AtomList *names; AtomList *binds; Atom *upper_scope; bool is_
 Atom *atom_scope_new(AtomList *names, AtomList *binds, Atom *upper_scope);
 Atom *atom_scope_freeze(Atom *atom);
 Atom *atom_scope_new_empty();
+Atom *atom_scope_new_double_empty();
 bool atom_scope_is(Atom *atom);
 
 void atom_scope_setflag_ismain(Atom *atom, bool flg);
