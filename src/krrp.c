@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
         info("    %s\n", string_from_atom(atomlist_representation(parsed)));
 
         info("=== Interpreting ===\n");
-        Atom *scope = TODO_main_scope();
+        Atom *scope = atom_scope_new_double_empty();
         while (!atomlist_empty(parsed))
             printf("%s\n", atom_repr(interpret_with_scope(parsed, scope)));
     }

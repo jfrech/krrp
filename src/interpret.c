@@ -16,49 +16,20 @@ extern Atom *ImportedSource;
 
 
 #define ASSERT(cnd, ...) { if (!(cnd)) return error("interpret :: " __VA_ARGS__), atom_Enull_new(); }
+static void _import_main(Atom *scope);
 
-
-
-
-
-/* TODO */
-// generate the main scope (every scope is a descendant of this scope or the null scope itself)
-Atom *TODO_main_scope() { // TODO
-    Atom *scope = atom_scope_new_empty();
-
-    // bind macro
-    #define B(str, bnd) atom_scope_push(scope, atom_name_new(str), bnd);
-
-    // bind digit macro
-    #define BD(str, dgt) B(strdup(str), atom_integer_new(dgt))
-    BD("0", 0) BD("1", 1) BD("2", 2) BD("3", 3) BD("4", 4)
-    BD("5", 5) BD("6", 6) BD("7", 7) BD("8", 8) BD("9", 9)
-
-    // bind arithmetic primitive macro
-    #define BAP(str) B(strdup(str), atom_function_new(2, NULL, NULL, atom_nullscope_new(), strdup(str)))
-    // #define BAP3(str) B(strdup(str), atom_function_new(3, NULL, NULL, atom_nullscope_new(), strdup(str)))
-
-    BAP("%") BAP("*") BAP("+") BAP("-") BAP("/") BAP("<") BAP("=") BAP(">")
-    // BAP("!") BAP3("?") BAP("|") BAP("&")
-
-    #undef BD
-    #undef B
-
-    #undef BAP
-    #undef BAP3
-
-    ((ScopeAtom *) scope->atom)->is_main = true;
-
-    return atom_scope_new_inherits(scope);
-}
 
 Atom *interpret_with_scope(AtomList *parsed, Atom *scope) {
+    atomlist_push_front(parsed, atom_name_new(strdup("]M")));
+    atomlist_push_front(parsed, atom_primitive_new('\\'));
+
     return _interpret(0, parsed, scope, true);
 }
 
 Atom *interpret(AtomList *parsed) {
-    return interpret_with_scope(parsed, TODO_main_scope());
+    return interpret_with_scope(parsed, atom_scope_new_double_empty());
 }
+
 
 Atom *_interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active) {
     ASSERT(recursion_depth < GlobOpt.maximum_interpretation_recursion_depth,
@@ -353,6 +324,11 @@ Atom *_interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active
                     Atom *import_name = atomlist_pop_front(atoms);
                     ASSERT(atom_name_is(import_name), "interpret: Import needs NameAtom, got %s.\n", atom_repr(import_name))
 
+                    if (atom_equal(import_name, atom_name_new(strdup("]M")))) {
+                        _import_main(upper_scope);
+                        continue;
+                    }
+
                     info("Importing '%s':\n", atom_repr(import_name));
                     if (!atom_scope_contains_bind(ImportedSource, import_name)) {
                         Atom *import_contents = atom_string_read_from_file(string_from_atom(import_name));
@@ -369,7 +345,7 @@ Atom *_interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active
                     ASSERT(import_parsed != NULL, "interpret: Could not parse import source.:\n")
                     atomlist_push(import_parsed, atom_primitive_new('S'));
 
-                    Atom *import_scope = TODO_main_scope();
+                    Atom *import_scope = atom_scope_new_double_empty();
                     Atom *imported_scope = NULL;
                     while (!atomlist_empty(import_parsed))
                         imported_scope = interpret_with_scope(import_parsed, import_scope);
@@ -386,6 +362,8 @@ Atom *_interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active
                         }
                         name_node = name_node->next;
                     }
+
+                    continue;
                 }
 
                 else if (c == 'S')
@@ -410,4 +388,31 @@ Atom *_interpret(long recursion_depth, AtomList *atoms, Atom *scope, bool active
     }
 
     return info("Fell through (active = %s).\n", active ? "true" : "false"), atom_null_new();
+}
+
+
+// import the main atoms (built-in functions and literal abbreviations)
+static void _import_main(Atom *scope) {
+    // bind macro
+    #define B(str, bnd) atom_scope_push(scope, atom_name_new(str), bnd);
+
+    // bind digit macro
+    #define BD(str, dgt) B(strdup(str), atom_integer_new(dgt))
+    BD("0", 0) BD("1", 1) BD("2", 2) BD("3", 3) BD("4", 4)
+    BD("5", 5) BD("6", 6) BD("7", 7) BD("8", 8) BD("9", 9)
+
+    // bind arithmetic primitive macro
+    #define BAP(str) B(strdup(str), atom_function_new(2, NULL, NULL, atom_nullscope_new(), strdup(str)))
+    // #define BAP3(str) B(strdup(str), atom_function_new(3, NULL, NULL, atom_nullscope_new(), strdup(str)))
+
+    BAP("%") BAP("*") BAP("+") BAP("-") BAP("/") BAP("<") BAP("=") BAP(">")
+    // BAP("!") BAP3("?") BAP("|") BAP("&")
+
+    #undef BD
+    #undef B
+
+    #undef BAP
+    #undef BAP3
+
+    ((ScopeAtom *) scope->atom)->is_main = true;
 }
